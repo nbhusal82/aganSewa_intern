@@ -1,11 +1,12 @@
 import db from "../config/dbconn.js";
+import { Apperror } from "../utlis/Apperror.js";
 
-export const addprovince = async (req, res) => {
+export const addprovince = async (req, res, next) => {
   try {
     const { province_name } = req.body;
 
     if (!province_name) {
-      return res.status(400).json({ message: "Province name is required" });
+      return Apperror(next, "province name is required", 400);
     }
 
     // check if province already exists
@@ -15,7 +16,7 @@ export const addprovince = async (req, res) => {
     );
 
     if (checkProvince.length > 0) {
-      return res.status(400).json({ message: "Province already exists" });
+      return Apperror(next, "Province already exists", 400);
     }
 
     // insert new province
@@ -25,11 +26,11 @@ export const addprovince = async (req, res) => {
 
     return res.status(201).json({ message: "Province added successfully" });
   } catch (error) {
-    console.error(error);
+    next(error);
   }
 };
 
-export const getprovince = async (req, res) => {
+export const getprovince = async (req, res, next) => {
   try {
     const [allprovince] = await db.query("SELECT * FROM province");
 
@@ -42,23 +43,16 @@ export const getprovince = async (req, res) => {
   }
 };
 
-export const deleteprovince = async (req, res) => {
+export const deleteprovince = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    if (!id) {
-      return res.status(400).json({
-        message: "Province id is required",
-      });
-    }
     const [rows] = await db.query(
       "SELECT * FROM province WHERE province_id = ?",
       [id]
     );
     if (rows.length === 0) {
-      return res.status(400).json({
-        message: "Province not found",
-      });
+      return Apperror(next, "Province not found", 400);
     }
 
     await db.query("DELETE FROM province WHERE province_id = ?", [id]);
@@ -67,5 +61,76 @@ export const deleteprovince = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
+  }
+};
+
+//district
+export const add_district = async (req, res, next) => {
+  try {
+    const { district_name, province_id } = req.body;
+
+    if (!district_name || !province_id) {
+      return Apperror(next, "District and province id is required", 400);
+    }
+    const [province] = await db.query(
+      "SELECT * FROM province WHERE province_id = ?",
+      [province_id]
+    );
+    if (province.length === 0) {
+      return Apperror(next, "district  is not found", 400);
+    }
+
+    // check if district already exists
+    const [checkDistrict] = await db.query(
+      "SELECT * FROM district WHERE district_name = ? ",
+      [district_name]
+    );
+
+    if (checkDistrict.length > 0) {
+      return Apperror(next, "district already exists", 400);
+    }
+
+    // insert new district
+    await db.query(
+      "INSERT INTO district (district_name, province_id) VALUES (?, ?)",
+      [district_name, province_id]
+    );
+
+    return res.status(201).json({ message: "District added successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const get_district = async (req, res, next) => {
+  try {
+    const [alldistrict] = await db.query("SELECT * FROM district");
+    return res.status(201).json({
+      message: "available district..",
+      data: alldistrict,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const delete_district = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return Apperror(next, "District is requried", 400);
+    }
+    const [rows] = await db.query("SELECT *FROM district WHERE district_id=?", [
+      id,
+    ]);
+    if (rows.length === 0) {
+      return Apperror("district not found", 400);
+    }
+    await db.query("DELETE FROM district WHERE district_id=?", [id]);
+    return res.status(200).json({
+      message: "District delete successfully",
+    });
+  } catch (error) {
+    next(error);
   }
 };
