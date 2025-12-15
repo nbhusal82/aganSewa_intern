@@ -1,10 +1,12 @@
 import express from "express";
 import {
   add_district,
+  addbranch,
   addprovince,
   delete_district,
   deleteprovince,
   get_district,
+  getbranch,
   getprovince,
 } from "../controller/branch.js";
 
@@ -20,4 +22,7 @@ branch_router.post("/add-dis", add_district);
 branch_router.get("/get-dis", get_district);
 branch_router.delete("/delete-dis/:id", delete_district);
 
+//branch
+branch_router.post("/addbranch", addbranch);
+branch_router.get("/getbranch", getbranch);
 export default branch_router;
