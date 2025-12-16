@@ -4,6 +4,7 @@ import db from "./config/dbconn.js";
 import router from "./routes/authRoutes.js";
 import branch_router from "./routes/branch.routes.js";
 import { sendError } from "./middlewares/errorhandler.js";
+import service_Router from "./routes/service.routes.js";
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ const PORT = process.env.PORT;
 app.use(express.json());
 app.use("/api/users", router);
 app.use("/api/branch", branch_router);
+app.use("/api/service", service_Router);
 app.use(sendError);
 try {
   await db.connect();

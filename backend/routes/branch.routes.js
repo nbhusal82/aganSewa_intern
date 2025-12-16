@@ -4,6 +4,7 @@ import {
   addbranch,
   addprovince,
   delete_district,
+  deletebranch,
   deleteprovince,
   get_district,
   getbranch,
@@ -25,4 +26,5 @@ branch_router.delete("/delete-dis/:id", delete_district);
 //branch
 branch_router.post("/addbranch", addbranch);
 branch_router.get("/getbranch", getbranch);
+branch_router.delete("/deletebranch/:branch_id", deletebranch);
 export default branch_router;

@@ -7,10 +7,13 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 create table services (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
+  services_id INT AUTO_INCREMENT PRIMARY KEY,
+  services_name VARCHAR(100) NOT NULL,
   description TEXT,
-  address VARCHAR(255) NOT NULL,
+  image  VARCHAR(255) Null,
+  branch_id int NOT Null, 
+   FOREIGN KEY (branch_id) REFERENCES branch(branch_id)
+
 ); 
 create table province(
   province_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -26,6 +29,7 @@ create table branch(
   branch_id INT AUTO_INCREMENT PRIMARY Key,
   branch_name VARCHAR(100) UNIQUE NOT Null,
   district_id INT NOT NULL,
-    FOREIGN KEY (district_id) REFERENCES district(district_id)
+    FOREIGN KEY (district_id) REFERENCES district(district_id),
+    Remark VARCHAR(255) Null
 
 )

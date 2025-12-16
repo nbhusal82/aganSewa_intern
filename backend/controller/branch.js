@@ -48,11 +48,11 @@ export const deleteprovince = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const [rows] = await db.query(
+    const [check] = await db.query(
       "SELECT * FROM province WHERE province_id = ?",
       [id]
     );
-    if (rows.length === 0) {
+    if (check.length === 0) {
       return Apperror(next, "Province not found", 400);
     }
 
@@ -172,6 +172,34 @@ export const getbranch = async (req, res, next) => {
     return res.status(200).json({
       message: "ALL branch ",
       data: allbranch,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deletebranch = async (req, res, next) => {
+  try {
+    const { branch_id } = req.params;
+
+
+    if (!branch_id) {
+      return Apperror(next, "Branch ID is required", 400);
+    }
+
+    const [checks] = await db.query(
+      "SELECT branch_id FROM branch WHERE branch_id = ?",
+      [branch_id]
+    );
+
+    if (checks.length === 0) {
+      return Apperror(next, "Branch not found", 404);
+    }
+
+    await db.query("DELETE FROM branch WHERE branch_id = ?", [branch_id]);
+
+    return res.status(200).json({
+      message: "Branch deleted successfully",
     });
   } catch (error) {
     next(error);
