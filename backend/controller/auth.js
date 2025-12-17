@@ -65,3 +65,4 @@ export const signout = async (req, res, next) => {
     next(error);
   }
 };
+// admin -addbranchmanager(branch_id,branch_email,branch_password,role)

@@ -33,3 +33,45 @@ create table branch(
     Remark VARCHAR(255) Null
 
 )
+CREATE TABLE inquiry (
+    inquiry_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    email VARCHAR(150) NULL,
+    description TEXT NOT NULL,
+    branch_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (branch_id)
+        REFERENCES branch(branch_id)
+
+) 
+ CREATE TABLE review(
+  review_id int AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255)null,
+  position VARCHAR(255) null,
+  description VARCHAR (255) null
+ )
+  create table staff(
+    staff_id int AUTO_INCREMENT PRIMARY Key,
+    staff_name VARCHAR(100) NOT NULL,
+    position VARCHAR(100) NOT NULL,
+    photo VARCHAR(255) NULL,
+    role ENUM('staff','manager','admin') DEFAULT 'staff',
+    description TEXT NULL,
+
+    branch_id INT NOT NULL,
+    FOREIGN KEY (branch_id) REFERENCES branch(branch_id),  
+    services_id INT NOT NULL,
+    FOREIGN KEY (services_id) REFERENCES services(services_id)
+  )
+
+
+  create table gallery(
+    title VARCHAR(100) NOT NULL,
+    image VARCHAR(255) NOT NULL,  
+    branch_id INT NOT NULL,
+    FOREIGN KEY (branch_id) REFERENCES branch(branch_id),
+    location VARCHAR(255) NOT NULL
+  )
