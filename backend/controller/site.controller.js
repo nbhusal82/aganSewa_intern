@@ -89,4 +89,102 @@ export const getReview = async (req, res, next) => {
   }
 };
 
+//gallery
+export const addgallery = async (req, res, next) => {
+  try {
+    const { title, location, branch_id } = req.body;
+    // const{imagePath} = req.files;
+    if (!title || !location || !branch_id) {
+      return Apperror(next, "All Field are required.", 400);
+    }
+    const [rows] = await db.query("SELECT * FROM  branch WHERE branch_id=?", [
+      branch_id,
+    ]);
+    if (rows.length === 0) {
+      return Apperror(next, "Branch Id is not exists", 400);
+    }
+    const imagePath = `uploads/gallery/${req.files[0].filename}`;
+    console.log(req.files);
+    await db.query(
+      "insert into gallery (title,location,branch_id,image) values (?,?,?,?)",
+      [title, location, branch_id, imagePath]
+    );
+    return res.status(200).json({
+      message: "Create Gallery Successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const Allgallery = async (req, res, next) => {
+  try {
+    const [result] = await db.query(
+      "SELECT g.* ,b.branch_name, b.branch_id FROM gallery g LEFT JOIN branch b ON g.branch_id=b.branch_id"
+    );
+    res.status(200).json({
+      message: "View All Images..",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const updateGallery = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, location, branch_id } = req.body;
 
+    // 1️⃣ gallery exists check
+    const [check] = await db.query("SELECT * FROM gallery WHERE gallery_id=?", [
+      id,
+    ]);
+
+    if (check.length === 0) {
+      return Apperror(next, "Gallery not found", 404);
+    }
+
+    const old = check[0];
+
+    // 2️⃣ branch validation (only if provided)
+    if (branch_id) {
+      const [branch] = await db.query(
+        "SELECT branch_id FROM branch WHERE branch_id=?",
+        [branch_id]
+      );
+      if (branch.length === 0) {
+        return Apperror(next, "Branch Id does not exist", 400);
+      }
+    }
+
+    let imagePath = old.image;
+    if (req.file) {
+      updatedImage = `uploads/gallery/${req.file.filename}`;
+
+      if (old.image) {
+        removeImage(`uploads/gallery/${gallery.image.split("/").pop()}`);
+      }
+    }
+
+    // 4️⃣ safe values (NO NULL issue)
+    const newTitle = title ?? old.title;
+    const newLocation = location ?? old.location;
+    const newBranchId = branch_id ?? old.branch_id;
+
+    // 5️⃣ update query
+    await db.query(
+      `UPDATE gallery SET
+        title=?,
+        location=?,
+        branch_id=?,
+        image=?
+       WHERE gallery_id=?`,
+      [newTitle, newLocation, newBranchId, imagePath, id]
+    );
+
+    return res.status(200).json({
+      message: "Gallery updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};

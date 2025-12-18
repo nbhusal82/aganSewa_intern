@@ -1,12 +1,13 @@
 import db from "../config/dbconn.js";
 import { Apperror } from "../utlis/Apperror.js";
+import { removeImage } from "../utlis/removeImg.js";
 
 export const createStaff = async (req, res, next) => {
   try {
     const { staff_name, position, role, description, branch_id, services_id } =
       req.body;
 
-    const photo = req.file ? req.file.filename : null;
+    const image = req.file ? `uploads/service/${req.file.filename}` : null;
 
     // FK check
     const [[branch]] = await db.query(
@@ -21,16 +22,16 @@ export const createStaff = async (req, res, next) => {
     );
     if (!service) return Apperror(next, "Invalid service", 400);
 
-    const [result] = await db.query(
+     await db.query(
       `INSERT INTO staff 
-      (staff_name, position, photo, role, description, branch_id, services_id)
+      (staff_name, position, image, role, description, branch_id, services_id)
       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [staff_name, position, photo, role, description, branch_id, services_id]
+      [staff_name, position, image, role, description, branch_id, services_id]
     );
 
     res.status(201).json({
       message: "Staff created successfully",
-      staff_id: result.insertId,
+    
     });
   } catch (error) {
     next(error);
@@ -122,6 +123,16 @@ export const updateStaff = async (req, res, next) => {
     const newDescription = description || old.description;
     const newBranchId = branch_id || old.branch_id;
     const newServicesId = services_id || old.services_id;
+ let updatedImage = old.image;
+    if (req.file) {
+      updatedImage = `uploads/staff/${req.file.filename}`;
+
+      if (old.image) {
+        removeImage(`uploads/staff/${staff.image.split("/").pop()}`);
+      }
+    }
+
+
 
     // 4️⃣ Update query
     await db.query(
@@ -131,7 +142,8 @@ export const updateStaff = async (req, res, next) => {
         role=?,
         description=?,
         branch_id=?,
-        services_id=?
+        services_id=?,
+        image=?
        
        WHERE staff_id=?`,
       [
@@ -141,6 +153,7 @@ export const updateStaff = async (req, res, next) => {
         newDescription,
         newBranchId,
         newServicesId,
+        updatedImage,
         id,
       ]
     );
