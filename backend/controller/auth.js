@@ -1,59 +1,76 @@
 import db from "../config/dbconn.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { Apperror } from "../utlis/Apperror.js";
 
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password)
-      return res.status(400).json({ message: "Email & Password required!" });
+    if (!email || !password) {
+      return Apperror(next, "Email & Password required!", 400);
+    }
 
-    const [user] = await db.execute("SELECT * FROM users WHERE email = ?", [
+    const [users] = await db.execute("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
-    const result = user[0];
 
-    if (result.length === 0) {
-      return res.status(400).json({
-        message: "Invaild Credenntials",
-      });
+    // user check
+    if (users.length === 0) {
+      return Apperror(next, "Invalid Credentials", 400);
     }
-    const isMatch = await bcrypt.compare(password, result.password);
+
+    const user = users[0];
+
+    //  password must exist
+    if (!user.password) {
+      return Apperror(next, "Password not set for this user", 500);
+    }
+
+    const isMatch = await bcrypt.compare(
+      String(password),
+      String(user.password)
+    );
+
     if (!isMatch) {
-      return res.status(400).json({
-        message: "Invaild Credenntials",
-      });
+      return Apperror(next, "Invalid Credentials", 400);
     }
-    const token = await jwt.sign(
+
+    const token = jwt.sign(
       {
-        id: result.id,
-        name: result.name,
-        email: result.email,
-        role: result.role,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
       },
       process.env.Secretkey,
       {
         expiresIn: process.env.expire,
       }
     );
-    res.cookie("token", token);
 
-    // Success bhaye poxe deykine ho..
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false, // production ma true
+      sameSite: "lax",
+    });
 
     res.status(200).json({
-      message: "login sucessful",
+      status: "success",
+      message: "Login successful",
       user: {
-        id: result.id,
-        name: result.name,
-        email: result.email,
-        role: result.role,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
       },
+      token,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
+
 
 export const signout = async (req, res, next) => {
   try {
@@ -66,3 +83,20 @@ export const signout = async (req, res, next) => {
   }
 };
 // admin -addbranchmanager(branch_id,branch_email,branch_password,role)
+
+export const addbranchmanager = async (req, res, next) => {
+  try {
+    const { name, email, password, role, branch_id } = req.body;
+    if (!name || !email || !password || !role) {
+      return Apperror(next, "All Filed are Required", 400);
+    }
+    const [check_branch] = await db.query(
+      "SELECT * FROM branch WHERE branch_id=?",
+      [branch_id]
+    );
+    if (check_branch.length === 0) {
+      return Apperror(next, "Branch id is not found ", 400);
+    }
+    await db.query("INSERT INTO ")
+  } catch (error) {}
+};

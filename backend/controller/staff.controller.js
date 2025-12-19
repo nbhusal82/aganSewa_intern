@@ -4,36 +4,70 @@ import { removeImage } from "../utlis/removeImg.js";
 
 export const createStaff = async (req, res, next) => {
   try {
-    const { staff_name, position, role, description, branch_id, services_id } =
-      req.body;
+    const {
+      staff_name,
+      position,
+      role,
+      email,
+      password,
+      description,
+      branch_id,
+      services_id,
+    } = req.body;
 
     const image = req.file ? `uploads/service/${req.file.filename}` : null;
 
+    if (req.file) {
+      removeImage(req.file.path);
+    }
     // FK check
-    const [[branch]] = await db.query(
+    const [branch] = await db.query(
       "SELECT branch_id FROM branch WHERE branch_id=?",
       [branch_id]
     );
-    if (!branch) return Apperror(next, "Invalid branch", 400);
+    if (!branch) {
+      if (req.file) {
+        removeImage(req.file.path);
+      }
 
-    const [[service]] = await db.query(
+      return Apperror(next, "Invalid branch", 400);
+    }
+
+    const [service] = await db.query(
       "SELECT services_id FROM services WHERE services_id=?",
       [services_id]
     );
-    if (!service) return Apperror(next, "Invalid service", 400);
+    if (!service) {
+      if (req.file) {
+        removeImage(req.file.path);
+      }
+      return Apperror(next, "Invalid service", 400);
+    }
 
-     await db.query(
+    await db.query(
       `INSERT INTO staff 
-      (staff_name, position, image, role, description, branch_id, services_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [staff_name, position, image, role, description, branch_id, services_id]
+      (staff_name, position, image, role,eamil,password, description, branch_id, services_id)
+      VALUES (?, ?, ?, ?, ?,?,?, ?, ?)`,
+      [
+        staff_name,
+        position,
+        image,
+        email,
+        password,
+        role,
+        description,
+        branch_id,
+        services_id,
+      ]
     );
 
     res.status(201).json({
       message: "Staff created successfully",
-    
     });
   } catch (error) {
+    if (req.file) {
+      removeImage(req.file.path);
+    }
     next(error);
   }
 };
@@ -68,6 +102,9 @@ export const deleteStaff = async (req, res, next) => {
     if (check.length === 0) {
       return Apperror(next, "Staff not found", 400);
     }
+    if (check[0].image) {
+      removeImage(`uploads/staff/${check[0].image.split("/").pop()}`);
+    }
 
     await db.query("DELETE FROM staff WHERE staff_id=?", [id]);
 
@@ -81,8 +118,16 @@ export const updateStaff = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const { staff_name, position, role, description, branch_id, services_id } =
-      req.body;
+    const {
+      staff_name,
+      position,
+      role,
+      email,
+      password,
+      description,
+      branch_id,
+      services_id,
+    } = req.body;
 
     // const photo = req.file ? req.file.filename : null;
 
@@ -116,23 +161,22 @@ export const updateStaff = async (req, res, next) => {
       }
     }
 
-    // 3️⃣ Safe update values (NO NULL issue)
     const newStaffName = staff_name || old.staff_name;
     const newPosition = position || old.position;
     const newRole = role || old.role;
     const newDescription = description || old.description;
     const newBranchId = branch_id || old.branch_id;
     const newServicesId = services_id || old.services_id;
- let updatedImage = old.image;
+    const newemail = email || old.email;
+    const newpassword = password || old.password;
+    let updatedImage = old.image;
     if (req.file) {
       updatedImage = `uploads/staff/${req.file.filename}`;
 
-      if (old.image) {
-        removeImage(`uploads/staff/${staff.image.split("/").pop()}`);
+      if (check[0].image) {
+        removeImage(`uploads/staff/${check[0].image.split("/").pop()}`);
       }
     }
-
-
 
     // 4️⃣ Update query
     await db.query(
@@ -143,7 +187,9 @@ export const updateStaff = async (req, res, next) => {
         description=?,
         branch_id=?,
         services_id=?,
-        image=?
+        image=?,
+        email=?,
+        password=?
        
        WHERE staff_id=?`,
       [
@@ -154,6 +200,8 @@ export const updateStaff = async (req, res, next) => {
         newBranchId,
         newServicesId,
         updatedImage,
+        newemail,
+        newpassword,
         id,
       ]
     );

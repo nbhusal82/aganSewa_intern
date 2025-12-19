@@ -1,7 +1,9 @@
 import express from "express";
-import { login, signout } from "../controller/auth.js";
+import { addbranchmanager, login, signout } from "../controller/auth.js";
+import { islogin } from "../middlewares/islogin.js";
 const router = express.Router();
 router.post("/login", login);
-router.post("/signout", signout);
+router.post("/logout", signout);
+router.post("/addmanager", islogin, addbranchmanager);
 
 export default router;

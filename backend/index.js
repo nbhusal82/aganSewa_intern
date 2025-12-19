@@ -12,7 +12,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
-
+app.use("/uploads", express.static("uploads"));
 app.use(express.json());
 app.use("/api/users", router);
 app.use("/api/branch", branch_router);

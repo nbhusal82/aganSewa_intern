@@ -104,7 +104,7 @@ export const addgallery = async (req, res, next) => {
       return Apperror(next, "Branch Id is not exists", 400);
     }
     const imagePath = `uploads/gallery/${req.files[0].filename}`;
-    console.log(req.files);
+
     await db.query(
       "insert into gallery (title,location,branch_id,image) values (?,?,?,?)",
       [title, location, branch_id, imagePath]
@@ -160,15 +160,15 @@ export const updateGallery = async (req, res, next) => {
     if (req.file) {
       updatedImage = `uploads/gallery/${req.file.filename}`;
 
-      if (old.image) {
-        removeImage(`uploads/gallery/${gallery.image.split("/").pop()}`);
+      if (check[0].image) {
+        removeImage(`uploads/gallery/${check[0].image.split("/").pop()}`);
       }
     }
 
     // 4️⃣ safe values (NO NULL issue)
-    const newTitle = title ?? old.title;
-    const newLocation = location ?? old.location;
-    const newBranchId = branch_id ?? old.branch_id;
+    const newTitle = title || old.title;
+    const newLocation = location || old.location;
+    const newBranchId = branch_id || old.branch_id;
 
     // 5️⃣ update query
     await db.query(

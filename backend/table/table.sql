@@ -3,8 +3,10 @@ CREATE TABLE users (
   name VARCHAR(100),
   email VARCHAR(100) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role ENUM('staff','manager','admin') DEFAULT 'staff',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  role ENUM('manager','admin') DEFAULT 'manager',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  branch_id INT NOT NULL,
+  FOREIGN KEY (branch_id) REFERENCES branch(branch_id)
 );
 create table services (
   services_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -58,7 +60,9 @@ CREATE TABLE inquiry (
     staff_name VARCHAR(100) NOT NULL,
     position VARCHAR(100) NOT NULL,
     photo VARCHAR(255) NULL,
-    role ENUM('staff','manager','admin') DEFAULT 'staff',
+    email VARCHAR(255) NOT null,
+    password VARCHAR (255) NOT Null,
+    role ENUM('staff') DEFAULT 'staff',
     description TEXT NULL,
 
     branch_id INT NOT NULL,

@@ -28,4 +28,4 @@ site_router.patch(
   updateGallery
 );
 
-export default site_router;
+export default site_router;  

@@ -7,6 +7,9 @@ export const addservices = async (req, res, next) => {
     const { services_name, branch_id, description } = req.body;
 
     if (!services_name || !branch_id || !description) {
+      if (req.file) {
+        removeImage(req.file.path);
+      }
       return Apperror(next, "All Filed are Required", 400);
     }
     const [branch_check] = await db.query(
@@ -14,6 +17,9 @@ export const addservices = async (req, res, next) => {
       [branch_id]
     );
     if (branch_check.length === 0) {
+      if (req.file) {
+        removeImage(req.file.path);
+      }
       return Apperror(next, "Branch Id is Not Found", 400);
     }
     const imagePath = req.file ? `uploads/service/${req.file.filename}` : null;
@@ -26,6 +32,9 @@ export const addservices = async (req, res, next) => {
       message: "Service Add Successfully",
     });
   } catch (error) {
+    if (req.file) {
+      removeImage(req.file.path);
+    }
     next(error);
   }
 };
@@ -79,14 +88,14 @@ export const updateService = async (req, res, next) => {
     if (req.file) {
       updatedImage = `uploads/service/${req.file.filename}`;
 
-      if (news.image) {
-        removeImage(`uploads/service/${service.image.split("/").pop()}`);
+      if (check[0].image) {
+        removeImage(`uploads/service/${check[0].image.split("/").pop()}`);
       }
     }
 
     await db.query(
       "UPDATE services SET services_name = ? , description = ?  , image=? WHERE services_id = ? ",
-      [newname, newdescription, updatedImage,id]
+      [newname, newdescription, updatedImage, id]
     );
     return res.status(200).json({
       message: "Update Service Successfull",
