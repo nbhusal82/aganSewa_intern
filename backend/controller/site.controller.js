@@ -1,5 +1,6 @@
 import db from "../config/dbconn.js";
 import { Apperror } from "../utlis/Apperror.js";
+import { removeImage } from "../utlis/removeImg.js";
 
 export const addInquiry = async (req, res, next) => {
   try {
@@ -95,24 +96,34 @@ export const addgallery = async (req, res, next) => {
     const { title, location, branch_id } = req.body;
     // const{imagePath} = req.files;
     if (!title || !location || !branch_id) {
+      if (req.files && req.files.length > 0) {
+        req.files.forEach((file) => removeImage(file.path));
+      }
       return Apperror(next, "All Field are required.", 400);
     }
     const [rows] = await db.query("SELECT * FROM  branch WHERE branch_id=?", [
       branch_id,
     ]);
     if (rows.length === 0) {
+      if (req.files && req.files.length > 0) {
+        req.files.forEach((file) => removeImage(file.path));
+      }
       return Apperror(next, "Branch Id is not exists", 400);
     }
-    const imagePath = `uploads/gallery/${req.files[0].filename}`;
+    const images = req.files.map((file) => `uploads/gallery/${file.filename}`);
+    const image = images.join(",");
 
     await db.query(
       "insert into gallery (title,location,branch_id,image) values (?,?,?,?)",
-      [title, location, branch_id, imagePath]
+      [title, location, branch_id, image]
     );
     return res.status(200).json({
       message: "Create Gallery Successfully",
     });
   } catch (error) {
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file) => removeImage(file.path));
+    }
     next(error);
   }
 };
@@ -183,6 +194,34 @@ export const updateGallery = async (req, res, next) => {
 
     return res.status(200).json({
       message: "Gallery updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteGallery = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await db.query(
+      "SELECT image FROM gallery WHERE gallery_id=?",
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return Apperror(next, "Gallery not found", 404);
+    }
+
+    const images = rows[0].image.split(",");
+
+    // ✅ remove all images
+    images.forEach((img) => removeImage(img));
+
+    await db.query("DELETE FROM gallery WHERE gallery_id=?", [id]);
+
+    res.status(200).json({
+      message: "Gallery deleted successfully",
     });
   } catch (error) {
     next(error);

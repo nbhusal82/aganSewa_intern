@@ -5,6 +5,7 @@ import {
   Allgallery,
   AllInquiry,
   createReview,
+  deleteGallery,
   deleteinquiry,
   getReview,
   updateGallery,
@@ -27,5 +28,6 @@ site_router.patch(
   uploadgallery.array("image", 30),
   updateGallery
 );
+site_router.delete("/gallery/delete/:id",uploadgallery.array("image",30), deleteGallery);
 
-export default site_router;  
+export default site_router;
