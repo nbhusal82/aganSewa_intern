@@ -7,7 +7,7 @@ export const islogin = async (req, res, next) => {
       return Apperror(next, "you must be login ", 400);
     }
 
-    const decoded = jwt.verify(token, process.env.Secret_key);
+    const decoded = jwt.verify(token, process.env.Secretkey);
     // console.log(decoded);
     req.user = decoded;
 

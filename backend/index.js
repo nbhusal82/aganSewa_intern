@@ -7,11 +7,12 @@ import { sendError } from "./middlewares/errorhandler.js";
 import service_Router from "./routes/service.routes.js";
 import site_router from "./routes/site.routes.js";
 import staff_router from "./routes/staff.routes.js";
-
+import cookie_parser from "cookie-parser";
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
+app.use(cookie_parser());
 app.use("/uploads", express.static("uploads"));
 app.use(express.json());
 app.use("/api/users", router);

@@ -1,6 +1,8 @@
 import db from "../config/dbconn.js";
 import { Apperror } from "../utlis/Apperror.js";
 import { removeImage } from "../utlis/removeImg.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 export const createStaff = async (req, res, next) => {
   try {
@@ -15,12 +17,8 @@ export const createStaff = async (req, res, next) => {
       services_id,
     } = req.body;
 
-    const image = req.file ? `uploads/service/${req.file.filename}` : null;
+    const image = req.file ? `uploads/staff/${req.file.filename}` : null;
 
-    if (req.file) {
-      removeImage(req.file.path);
-    }
-    // FK check
     const [branch] = await db.query(
       "SELECT branch_id FROM branch WHERE branch_id=?",
       [branch_id]
@@ -46,15 +44,16 @@ export const createStaff = async (req, res, next) => {
 
     await db.query(
       `INSERT INTO staff 
-      (staff_name, position, image, role,eamil,password, description, branch_id, services_id)
+      (staff_name, position, image, role,email,password, description, branch_id, services_id)
       VALUES (?, ?, ?, ?, ?,?,?, ?, ?)`,
       [
         staff_name,
         position,
         image,
+        role,
         email,
         password,
-        role,
+
         description,
         branch_id,
         services_id,
@@ -83,9 +82,13 @@ export const getStaffs = async (req, res, next) => {
       JOIN services sv ON s.services_id = sv.services_id
       ORDER BY s.staff_id DESC
     `);
+    rows.forEach((staff) => {
+      delete staff.password;
+    });
 
     return res.status(200).json({
       message: "ALL STAFF ..",
+
       data: rows,
     });
   } catch (error) {
@@ -121,9 +124,7 @@ export const updateStaff = async (req, res, next) => {
     const {
       staff_name,
       position,
-      role,
-      email,
-      password,
+
       description,
       branch_id,
       services_id,
@@ -163,12 +164,11 @@ export const updateStaff = async (req, res, next) => {
 
     const newStaffName = staff_name || old.staff_name;
     const newPosition = position || old.position;
-    const newRole = role || old.role;
+
     const newDescription = description || old.description;
     const newBranchId = branch_id || old.branch_id;
     const newServicesId = services_id || old.services_id;
-    const newemail = email || old.email;
-    const newpassword = password || old.password;
+
     let updatedImage = old.image;
     if (req.file) {
       updatedImage = `uploads/staff/${req.file.filename}`;
@@ -183,31 +183,102 @@ export const updateStaff = async (req, res, next) => {
       `UPDATE staff SET
         staff_name=?,
         position=?,
-        role=?,
+       
         description=?,
         branch_id=?,
         services_id=?,
         image=?,
-        email=?,
-        password=?
+     
+    
        
        WHERE staff_id=?`,
       [
         newStaffName,
         newPosition,
-        newRole,
+
         newDescription,
         newBranchId,
         newServicesId,
         updatedImage,
-        newemail,
-        newpassword,
+
         id,
       ]
     );
 
     res.status(200).json({
       message: "Staff updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const loginStaff = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return Apperror(next, "All fields are required", 400);
+    }
+    const [staff] = await db.query(`
+      SELECT 
+        s.staff_id,
+        s.staff_name,
+        s.email,
+        s.password,
+        s.role,
+        s.branch_id,
+        b.branch_name
+      FROM staff s
+      JOIN branch b ON s.branch_id = b.branch_id
+      WHERE s.email = ?
+    `, [email]);
+    if (staff.length === 0) {
+      return Apperror(next, "Invalid email", 401);
+    }
+    const user = staff[0];
+
+    //  password must exist
+    if (!user.password) {
+      return Apperror(next, "Password not set for this user", 400);
+    }
+
+    const isMatch = await bcrypt.compare(
+      String(password),
+      String(user.password)
+    );
+
+    if (!isMatch) {
+      return Apperror(next, "Invalid Credentials", 400);
+    }
+
+    const token_staff = jwt.sign(
+      {
+        id: user.staff_id,
+        name: user.staff_name,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.Secretkey,
+      {
+        expiresIn: process.env.expire,
+      }
+    );
+
+    res.cookie("token", token_staff, {
+      httpOnly: true,
+      secure: false, // production ma true
+      sameSite: "lax",
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Login successful",
+      user: {
+        id: user.staff_id,
+        name: user.staff_name,
+        email: user.email,
+        role: user.role,
+      },
+      token_staff,
     });
   } catch (error) {
     next(error);

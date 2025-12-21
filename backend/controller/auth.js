@@ -86,7 +86,7 @@ export const signout = async (req, res, next) => {
 export const addbranchmanager = async (req, res, next) => {
   try {
     const { name, email, password, role, branch_id } = req.body;
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password || !branch_id) {
       return Apperror(next, "All Filed are Required", 400);
     }
     const [check_branch] = await db.query(
@@ -96,24 +96,25 @@ export const addbranchmanager = async (req, res, next) => {
     if (check_branch.length === 0) {
       return Apperror(next, "Branch id is not found ", 400);
     }
-    const [check_mail] = await db.query(
-      "SELECT * FROM branch WHERE branch_email=?",
-      [email]
-    );
+    const [check_mail] = await db.query("SELECT * FROM users WHERE email=?", [
+      email,
+    ]);
     if (check_mail.length > 0) {
       return Apperror(next, "Email already exists", 400);
     }
-
-    const [result] = await db.query(
-      "SELECT * FROM users WHERE role = ? AND email = ?",
-      ["manager", manager_email]
-    );
-    if (result.length > 0) {
-      return Apperror(next, "manager already exists", 400);
+    const [rows] = await db.query("SELECT * FROM USERS WHERE   branch_id=?", [
+      branch_id,
+    ]);
+    if (rows.length > 0) {
+      return Apperror(
+        next,
+        "Branch manager already exists for this branch",
+        400
+      );
     }
     await db.query(
-      "INSERT INTO users (name, email, password, role,branch_id) VALUES (?, ?, ?, ?, ?)",
-      [name, email, password, role, branch_id]
+      "INSERT INTO users (name, email, password, branch_id) VALUES ( ?, ?, ?, ?)",
+      [name, email, password, branch_id]
     );
     res.status(201).json({
       status: "success",
@@ -125,7 +126,9 @@ export const addbranchmanager = async (req, res, next) => {
 };
 export const getmanagers = async (req, res, next) => {
   try {
-    const [managers] = await db.query("SELECT * FROM users WHERE role = ?");
+    const [managers] = await db.query("SELECT user_id,name,email,role,branch_id FROM users WHERE role=?", [
+      "manager",
+    ]);
 
     res.status(200).json({
       status: "success",
@@ -138,10 +141,13 @@ export const getmanagers = async (req, res, next) => {
 export const deletemanager = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const [result] = await db.query("DELETE FROM users WHERE user_id = ? AND role = ?", [id, "manager"]);
+    const [result] = await db.query(
+      "DELETE FROM users WHERE user_id = ? AND role = ?",
+      [id, "manager"]
+    );
 
     if (result.length === 0) {
-      return Apperror(next, "Manager not found or cannot be deleted", 404);
+      return Apperror(next, "Manager not found  cannot be deleted", 404);
     }
     res.status(200).json({
       status: "success",
@@ -150,7 +156,7 @@ export const deletemanager = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-}
+};
 
 export const updateManager = async (req, res, next) => {
   try {
@@ -169,19 +175,15 @@ export const updateManager = async (req, res, next) => {
 
     const oldData = users[0];
 
-  
-    
-      const [emailCheck] = await db.execute(
-        "SELECT user_id FROM users WHERE email = ? AND user_id != ?",
-        [email, id]
-      );
+    const [emailCheck] = await db.execute(
+      "SELECT user_id FROM users WHERE email = ? AND user_id != ?",
+      [email, id]
+    );
 
-      if (emailCheck.length > 0) {
-        return Apperror(next, "Email already in use", 400);
-      
+    if (emailCheck.length > 0) {
+      return Apperror(next, "Email already in use", 400);
     }
 
-    
     if (branch_id) {
       const [branch] = await db.execute(
         "SELECT branch_id FROM branch WHERE branch_id = ?",

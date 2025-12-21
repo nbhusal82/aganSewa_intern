@@ -8,13 +8,7 @@ export const addInquiry = async (req, res, next) => {
     if (!name || !phone || !address || !email || !branch_id) {
       return Apperror(next, "All field are Required ", 400);
     }
-    const [check_phone] = await db.query(
-      "SELECT * from inquiry WHERE phone=?",
-      [phone]
-    );
-    if (check_phone.length > 0) {
-      return Apperror(next, "Phone is already Exists", 400);
-    }
+    
 
     await db.execute(
       "INSERT INTO inquiry(name,phone,address,email,description,branch_id) VALUES(?,?,?,?,?,?)",

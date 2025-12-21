@@ -64,8 +64,7 @@ CREATE TABLE inquiry (
     password VARCHAR (255) NOT Null,
     role ENUM('staff') DEFAULT 'staff',
     description TEXT NULL,
-
-    branch_id INT NOT NULL,
+     branch_id INT NOT NULL,
     FOREIGN KEY (branch_id) REFERENCES branch(branch_id),  
     services_id INT NOT NULL,
     FOREIGN KEY (services_id) REFERENCES services(services_id)
