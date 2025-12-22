@@ -40,15 +40,35 @@ export const addservices = async (req, res, next) => {
 };
 export const AllService = async (req, res, next) => {
   try {
-    const [rows] = await db.query(
-      `SELECT s.*,
+    const { role, email } = req.user;
+    
+
+    if (role === "admin") {
+      const [rows] = await db.query(
+        `SELECT s.*,
        
       b.branch_id , b.branch_name from services s LEFT JOIN branch b ON s.branch_id=b.branch_id`
-    );
-    return res.status(200).json({
-      message: "All Service ..",
-      data: rows,
-    });
+      );
+      return res.status(200).json({
+        message: "All Service ..",
+        data: rows,
+      });
+    }
+    if (role === "manager") {
+      const [id] = await db.query("SELECT branch_id From users where email=?", [
+        email,
+      ]);
+      const branch_id = id[0].branch_id;
+      const [rows] = await db.query(
+        "SELECT * FROM services WHERE branch_id=?",
+        [branch_id]
+      );
+
+      return res.status(200).json({
+        message: "All Service ..",
+        data: rows,
+      });
+    }
   } catch (error) {
     next(error);
   }
@@ -57,6 +77,7 @@ export const AllService = async (req, res, next) => {
 export const DeleteService = async (req, res, next) => {
   try {
     const { services_id } = req.params;
+  
     if (!services_id) {
       return Apperror(next, "Services id is not exists", 400);
     }

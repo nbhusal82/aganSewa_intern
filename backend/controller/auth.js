@@ -20,11 +20,19 @@ export const login = async (req, res, next) => {
       return Apperror(next, "Invalid Credentials", 400);
     }
 
+    const [branch] = await db.execute(
+      `SELECT u.name,u.user_id,u.email,u.role,b.branch_name FROM users u LEFT JOIN branch b ON u.branch_id=b.branch_id WHERE u.email=?`,
+      [email]
+    );
+    if (branch.length === 0) {
+      return Apperror(next, "No branch assigned to this user", 400);
+    }
+
     const user = users[0];
 
     //  password must exist
     if (!user.password) {
-      return Apperror(next, "Password not set for this user", 500);
+      return Apperror(next, "Password not set for this user", 400);
     }
 
     const isMatch = await bcrypt.compare(
@@ -38,7 +46,7 @@ export const login = async (req, res, next) => {
 
     const token = jwt.sign(
       {
-        id: user.id,
+        user_id: user.user_id,
         name: user.name,
         email: user.email,
         role: user.role,
@@ -52,7 +60,8 @@ export const login = async (req, res, next) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: false, // production ma true
-      sameSite: "lax",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
@@ -63,6 +72,8 @@ export const login = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        branch_name: branch[0].branch_name,
+        branch_id: user.branch_id,
       },
       token,
     });
@@ -126,9 +137,10 @@ export const addbranchmanager = async (req, res, next) => {
 };
 export const getmanagers = async (req, res, next) => {
   try {
-    const [managers] = await db.query("SELECT user_id,name,email,role,branch_id FROM users WHERE role=?", [
-      "manager",
-    ]);
+    const [managers] = await db.query(
+      "SELECT user_id,name,email,role,branch_id FROM users WHERE role=?",
+      ["manager"]
+    );
 
     res.status(200).json({
       status: "success",

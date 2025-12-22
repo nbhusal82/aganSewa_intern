@@ -218,19 +218,9 @@ export const loginStaff = async (req, res, next) => {
     if (!email || !password) {
       return Apperror(next, "All fields are required", 400);
     }
-    const [staff] = await db.query(`
-      SELECT 
-        s.staff_id,
-        s.staff_name,
-        s.email,
-        s.password,
-        s.role,
-        s.branch_id,
-        b.branch_name
-      FROM staff s
-      JOIN branch b ON s.branch_id = b.branch_id
-      WHERE s.email = ?
-    `, [email]);
+    const [staff] = await db.query("SELECT * FROM staff WHERE email=?", [
+      email,
+    ]);
     if (staff.length === 0) {
       return Apperror(next, "Invalid email", 401);
     }
@@ -266,7 +256,8 @@ export const loginStaff = async (req, res, next) => {
     res.cookie("token", token_staff, {
       httpOnly: true,
       secure: false, // production ma true
-      sameSite: "lax",
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
@@ -279,6 +270,16 @@ export const loginStaff = async (req, res, next) => {
         role: user.role,
       },
       token_staff,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const logoutStaff = async (req, res, next) => {
+  try {
+    res.clearCookie("token");
+    res.status(200).json({
+      message: "Logout successful",
     });
   } catch (error) {
     next(error);
