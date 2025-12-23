@@ -8,13 +8,24 @@ import {
   updateManager,
 } from "../controller/auth.js";
 import { islogin } from "../middlewares/islogin.js";
-import { isadmin } from "../middlewares/isAdmin.js";
+import { authorizeRoles } from "../middlewares/authorizeRoles.js";
+
 const router = express.Router();
 router.post("/login", login);
 router.post("/logout", signout);
-router.post("/addmanager", islogin, isadmin, addbranchmanager);
-router.get("/getmanager", islogin, isadmin,getmanagers);
-router.delete("/deletemanager/:id", islogin,isadmin, deletemanager);
-router.patch("/updatemanager/:id", islogin,isadmin ,updateManager);
+router.post("/addmanager", islogin, authorizeRoles("admin"), addbranchmanager);
+router.get("/getmanager", islogin, authorizeRoles("admin"), getmanagers);
+router.delete(
+  "/deletemanager/:id",
+  islogin,
+  authorizeRoles("admin"),
+  deletemanager
+);
+router.patch(
+  "/updatemanager/:id",
+  islogin,
+  authorizeRoles("admin"),
+  updateManager
+);
 
 export default router;

@@ -96,7 +96,8 @@ export const signout = async (req, res, next) => {
 
 export const addbranchmanager = async (req, res, next) => {
   try {
-    const { name, email, password, role, branch_id } = req.body;
+    
+    const { name, email, password, branch_id } = req.body;
     if (!name || !email || !password || !branch_id) {
       return Apperror(next, "All Filed are Required", 400);
     }

@@ -4,44 +4,66 @@ import { removeImage } from "../utlis/removeImg.js";
 
 export const addservices = async (req, res, next) => {
   try {
-    const { services_name, branch_id, description } = req.body;
-
-    if (!services_name || !branch_id || !description) {
-      if (req.file) {
-        removeImage(req.file.path);
+    const { services_name, description, branch_id } = req.body;
+    const { email, role, branch_id: managerid } = req.user;
+    if (role === "manager") {
+      if (managerid !== Number(branch_id)) {
+        if (req.file) removeImage(req.file.path);
+        return Apperror(
+          next,
+          "You can only add services to your own branch",
+          403
+        );
       }
-      return Apperror(next, "All Filed are Required", 400);
     }
-    const [branch_check] = await db.query(
-      "SELECT * FROM branch WHERE branch_id = ?",
+
+    //  Required fields
+    if (!services_name || !description) {
+      if (req.file) removeImage(req.file.path);
+      return Apperror(next, "All fields are required", 400);
+    }
+
+    // Get manager branch
+    const [user] = await db.query(
+      "SELECT branch_id FROM users WHERE email = ?",
+      [email]
+    );
+
+    if (user.length === 0 || !user[0].branch_id) {
+      return Apperror(next, "User not found", 404);
+    }
+
+    // Check branch exists
+    const [branch] = await db.query(
+      "SELECT branch_id FROM branch WHERE branch_id = ?",
       [branch_id]
     );
-    if (branch_check.length === 0) {
-      if (req.file) {
-        removeImage(req.file.path);
-      }
-      return Apperror(next, "Branch Id is Not Found", 400);
+
+    if (branch.length === 0) {
+      return Apperror(next, "Branch not found", 400);
     }
+
+    //  Image
     const imagePath = req.file ? `uploads/service/${req.file.filename}` : null;
 
+    //  Insert (branch_id from DB, NOT body)
     await db.query(
-      "INSERT INTO services (services_name,description,branch_id,image) VALUES ( ?,? ,? ,? )",
+      "INSERT INTO services (services_name, description, branch_id, image) VALUES (?, ?, ?, ?)",
       [services_name, description, branch_id, imagePath]
     );
+
     return res.status(200).json({
-      message: "Service Add Successfully",
+      message: "Service added successfully",
     });
   } catch (error) {
-    if (req.file) {
-      removeImage(req.file.path);
-    }
+    if (req.file) removeImage(req.file.path);
     next(error);
   }
 };
+
 export const AllService = async (req, res, next) => {
   try {
     const { role, email } = req.user;
-    
 
     if (role === "admin") {
       const [rows] = await db.query(
@@ -77,11 +99,28 @@ export const AllService = async (req, res, next) => {
 export const DeleteService = async (req, res, next) => {
   try {
     const { services_id } = req.params;
-  
-    if (!services_id) {
+    const { role, email } = req.user;
+
+    if (role !== "manager") {
+      return Apperror(next, "Manager only Access.", 400);
+    }
+    const [user] = await db.query(
+      "SELECT branch_id FROM users WHERE email = ?",
+      [email]
+    );
+
+    if (user.length === 0) {
+      return Apperror(next, "User not found", 404);
+    }
+
+    const [service] = await db.query(
+      "SELECT * FROM services WHERE services_id=?",
+      [services_id]
+    );
+    if (service.length === 0) {
       return Apperror(next, "Services id is not exists", 400);
     }
-    await db.query("DELETE FROM services WHERE services_id=?", [services_id]);
+    await db.query("DELETE FROM services WHERE services_id = ?", [services_id]);
     return res.status(200).json({
       message: "Services delete Sucessfully",
     });

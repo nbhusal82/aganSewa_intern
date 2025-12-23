@@ -7,11 +7,18 @@ import {
 } from "../controller/services.js";
 import { uploadservice } from "../utlis/multer.js";
 import { islogin } from "../middlewares/islogin.js";
+import { authorizeRoles } from "../middlewares/authorizeRoles.js";
 
 const service_Router = express.Router();
-service_Router.post("/", uploadservice.single("image"), addservices);
+service_Router.post(
+  "/",
+  islogin,
+  authorizeRoles("manager"),
+  uploadservice.single("image"),
+  addservices
+);
 service_Router.get("/get", islogin, AllService);
-service_Router.delete("/delete/:services_id", DeleteService);
+service_Router.delete("/delete/:services_id", islogin, DeleteService);
 service_Router.patch(
   "/update/:id",
   uploadservice.single("image"),
