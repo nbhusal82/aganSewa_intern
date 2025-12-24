@@ -1,21 +1,13 @@
 import { Apperror } from "../utlis/Apperror.js";
 import db from "../config/dbconn.js";
 import { removeImage } from "../utlis/removeImg.js";
+import { serialize } from "v8";
 
 export const addservices = async (req, res, next) => {
   try {
     const { services_name, description, branch_id } = req.body;
-    const { email, role, branch_id: managerid } = req.user;
-    if (role === "manager") {
-      if (managerid !== Number(branch_id)) {
-        if (req.file) removeImage(req.file.path);
-        return Apperror(
-          next,
-          "You can only add services to your own branch",
-          403
-        );
-      }
-    }
+
+    // console.log(typeof branchId);
 
     //  Required fields
     if (!services_name || !description) {
@@ -24,24 +16,18 @@ export const addservices = async (req, res, next) => {
     }
 
     // Get manager branch
-    const [user] = await db.query(
-      "SELECT branch_id FROM users WHERE email = ?",
-      [email]
-    );
-
-    if (user.length === 0 || !user[0].branch_id) {
-      return Apperror(next, "User not found", 404);
-    }
 
     // Check branch exists
     const [branch] = await db.query(
       "SELECT branch_id FROM branch WHERE branch_id = ?",
-      [branch_id]
+      [branchId]
     );
 
     if (branch.length === 0) {
       return Apperror(next, "Branch not found", 400);
     }
+
+    // console.log(.branch_id);
 
     //  Image
     const imagePath = req.file ? `uploads/service/${req.file.filename}` : null;
@@ -159,6 +145,34 @@ export const updateService = async (req, res, next) => {
     );
     return res.status(200).json({
       message: "Update Service Successfull",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const getservice = async (req, res, next) => {
+  const { province_id, district_id, branch_id } = req.query;
+  console.log(req.query);
+
+  try {
+    let query = "";
+    let params = [];
+    if (province_id && !district_id && !branch_id) {
+      query = "SELECT * FROM district where province_id = ?";
+      params = [province_id];
+    } else if (province_id && district_id && !branch_id) {
+      query = "SELECT * FROM branch where district_id=?";
+      params = [district_id];
+    } else if (province_id && district_id && branch_id) {
+      query = "SELECT * FROM services where branch_id=?";
+      params = [branch_id];
+    } else {
+      query = "SELECT * From services ";
+    }
+    const [result] = await db.query(query, params);
+    res.status(200).json({
+      message: "Data fatch",
+      data: result,
     });
   } catch (error) {
     next(error);

@@ -50,6 +50,7 @@ export const login = async (req, res, next) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        branch_id: user.branch_id,
       },
       process.env.Secretkey,
       {
@@ -96,7 +97,6 @@ export const signout = async (req, res, next) => {
 
 export const addbranchmanager = async (req, res, next) => {
   try {
-    
     const { name, email, password, branch_id } = req.body;
     if (!name || !email || !password || !branch_id) {
       return Apperror(next, "All Filed are Required", 400);

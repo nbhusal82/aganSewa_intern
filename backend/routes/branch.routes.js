@@ -23,7 +23,12 @@ branch_router.delete("/:id", islogin, authorizeRoles("admin"), deleteprovince);
 //district
 
 branch_router.post("/add-dis", islogin, authorizeRoles("admin"), add_district);
-branch_router.get("/get-dis", islogin, authorizeRoles("admin"), get_district);
+branch_router.get(
+  "/get-dis",
+  islogin,
+  authorizeRoles("admin", "manager"),
+  get_district
+);
 branch_router.delete(
   "/delete-dis/:id",
   islogin,
@@ -33,7 +38,12 @@ branch_router.delete(
 
 //branch
 branch_router.post("/addbranch", islogin, authorizeRoles("admin"), addbranch);
-branch_router.get("/getbranch", islogin, authorizeRoles("admin"), getbranch);
+branch_router.get(
+  "/getbranch",
+  islogin,
+  authorizeRoles("admin", "manager"),
+  getbranch
+);
 branch_router.delete(
   "/deletebranch/:branch_id",
   islogin,
