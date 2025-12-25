@@ -32,7 +32,7 @@ branch_router.get(
 branch_router.delete(
   "/delete-dis/:id",
   islogin,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "manager"),
   delete_district
 );
 
@@ -47,7 +47,7 @@ branch_router.get(
 branch_router.delete(
   "/deletebranch/:branch_id",
   islogin,
-  authorizeRoles("admin"),
+  authorizeRoles("admin", "manager"),
   deletebranch
 );
 export default branch_router;

@@ -21,10 +21,16 @@ service_Router.post(
   BranchAccess,
   addservices
 );
-service_Router.get("/get", islogin, AllService);
-service_Router.delete("/delete/:services_id", islogin, DeleteService);
+service_Router.get(
+  "/get",
+  islogin,
+  authorizeRoles("manager", "admin"),
+  AllService
+);
+service_Router.delete("/delete/:services_id", islogin,authorizeRoles("manager","admin"), DeleteService);
 service_Router.patch(
-  "/update/:id",
+  "/update/:id", islogin,
+  authorizeRoles("manager", "admin"),
   uploadservice.single("image"),
   updateService
 );
