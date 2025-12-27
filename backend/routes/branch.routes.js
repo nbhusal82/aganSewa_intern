@@ -33,6 +33,7 @@ branch_router.delete(
   "/delete-dis/:id",
   islogin,
   authorizeRoles("admin", "manager"),
+  
   delete_district
 );
 

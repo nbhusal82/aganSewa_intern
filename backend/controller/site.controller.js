@@ -8,7 +8,6 @@ export const addInquiry = async (req, res, next) => {
     if (!name || !phone || !address || !email || !branch_id) {
       return Apperror(next, "All field are Required ", 400);
     }
-    
 
     await db.execute(
       "INSERT INTO inquiry(name,phone,address,email,description,branch_id) VALUES(?,?,?,?,?,?)",
@@ -88,29 +87,37 @@ export const getReview = async (req, res, next) => {
 export const addgallery = async (req, res, next) => {
   try {
     const { title, location, branch_id } = req.body;
-    // const{imagePath} = req.files;
-    if (!title || !location || !branch_id) {
+
+    // Required fields (branch_id admin ko lagi matra)
+    if (!title || !location || (role === "admin" && !branch_id)) {
       if (req.files && req.files.length > 0) {
         req.files.forEach((file) => removeImage(file.path));
       }
-      return Apperror(next, "All Field are required.", 400);
+      return Apperror(next, "All fields are required.", 400);
     }
-    const [rows] = await db.query("SELECT * FROM  branch WHERE branch_id=?", [
+
+    // Check branch exists
+    const [rows] = await db.query("SELECT * FROM branch WHERE branch_id=?", [
       branch_id,
     ]);
+
     if (rows.length === 0) {
       if (req.files && req.files.length > 0) {
         req.files.forEach((file) => removeImage(file.path));
       }
-      return Apperror(next, "Branch Id is not exists", 400);
+      return Apperror(next, "Branch Id does not exist", 400);
     }
+
+    // Images
     const images = req.files.map((file) => `uploads/gallery/${file.filename}`);
     const image = images.join(",");
 
+    // Insert
     await db.query(
-      "insert into gallery (title,location,branch_id,image) values (?,?,?,?)",
+      "INSERT INTO gallery (title, location, branch_id, image) VALUES (?, ?, ?, ?)",
       [title, location, branch_id, image]
     );
+
     return res.status(200).json({
       message: "Create Gallery Successfully",
     });
@@ -121,25 +128,46 @@ export const addgallery = async (req, res, next) => {
     next(error);
   }
 };
+
 export const Allgallery = async (req, res, next) => {
   try {
-    const [result] = await db.query(
-      "SELECT g.* ,b.branch_name, b.branch_id FROM gallery g LEFT JOIN branch b ON g.branch_id=b.branch_id"
-    );
-    res.status(200).json({
-      message: "View All Images..",
+    const { role, branch_id } = req.user;
+    let result;
+
+    if (role === "admin") {
+      // Admin → all gallery
+      [result] = await db.query(
+        `SELECT g.*, b.branch_name, b.branch_id
+         FROM gallery g
+         LEFT JOIN branch b ON g.branch_id = b.branch_id`
+      );
+    } else {
+      // Manager → own branch only
+      [result] = await db.query(
+        `SELECT g.*, b.branch_name, b.branch_id
+         FROM gallery g
+         LEFT JOIN branch b ON g.branch_id = b.branch_id
+         WHERE g.branch_id = ?`,
+        [branch_id]
+      );
+    }
+
+    return res.status(200).json({
+      message: "View Gallery",
       data: result,
     });
   } catch (error) {
     next(error);
   }
 };
+
 export const updateGallery = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { title, location, branch_id } = req.body;
+    const { role, branch_id: userBranchId } = req.user;
 
-    // 1️⃣ gallery exists check
+    //  gallery exists check
     const [check] = await db.query("SELECT * FROM gallery WHERE gallery_id=?", [
       id,
     ]);
@@ -150,32 +178,43 @@ export const updateGallery = async (req, res, next) => {
 
     const old = check[0];
 
-    // 2️⃣ branch validation (only if provided)
-    if (branch_id) {
+    //  Manager → own branch only
+    if (role === "manager" && old.branch_id !== userBranchId) {
+      return Apperror(next, "You can update only your branch gallery", 403);
+    }
+
+    //  Decide final branch_id
+    let finalBranchId = old.branch_id;
+
+    if (role === "admin" && branch_id) {
+      // admin le matra branch change garna paune
       const [branch] = await db.query(
         "SELECT branch_id FROM branch WHERE branch_id=?",
         [branch_id]
       );
+
       if (branch.length === 0) {
         return Apperror(next, "Branch Id does not exist", 400);
       }
+
+      finalBranchId = branch_id;
     }
 
+    //  Image update
     let imagePath = old.image;
     if (req.file) {
-      updatedImage = `uploads/gallery/${req.file.filename}`;
+      imagePath = `uploads/gallery/${req.file.filename}`;
 
-      if (check[0].image) {
-        removeImage(`uploads/gallery/${check[0].image.split("/").pop()}`);
+      if (old.image) {
+        removeImage(`uploads/gallery/${old.image.split("/").pop()}`);
       }
     }
 
-    // 4️⃣ safe values (NO NULL issue)
+    //  Safe values (null issue solve)
     const newTitle = title || old.title;
     const newLocation = location || old.location;
-    const newBranchId = branch_id || old.branch_id;
 
-    // 5️⃣ update query
+    //  Update query
     await db.query(
       `UPDATE gallery SET
         title=?,
@@ -183,7 +222,7 @@ export const updateGallery = async (req, res, next) => {
         branch_id=?,
         image=?
        WHERE gallery_id=?`,
-      [newTitle, newLocation, newBranchId, imagePath, id]
+      [newTitle, newLocation, finalBranchId, imagePath, id]
     );
 
     return res.status(200).json({
@@ -197,9 +236,11 @@ export const updateGallery = async (req, res, next) => {
 export const deleteGallery = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { role, branch_id: userBranchId } = req.user;
 
+    // gallery exists + branch check
     const [rows] = await db.query(
-      "SELECT image FROM gallery WHERE gallery_id=?",
+      "SELECT image, branch_id FROM gallery WHERE gallery_id=?",
       [id]
     );
 
@@ -207,14 +248,21 @@ export const deleteGallery = async (req, res, next) => {
       return Apperror(next, "Gallery not found", 404);
     }
 
-    const images = rows[0].image.split(",");
+    const gallery = rows[0];
 
-    // ✅ remove all images
+    //  Manager → own branch only
+    if (role === "manager" && gallery.branch_id !== userBranchId) {
+      return Apperror(next, "You can delete only your branch gallery", 403);
+    }
+
+    //  remove all images
+    const images = gallery.image.split(",");
     images.forEach((img) => removeImage(img));
 
+    //  delete gallery
     await db.query("DELETE FROM gallery WHERE gallery_id=?", [id]);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Gallery deleted successfully",
     });
   } catch (error) {

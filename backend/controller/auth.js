@@ -1,6 +1,9 @@
 import db from "../config/dbconn.js";
-import bcrypt from "bcrypt";
+
 import jwt from "jsonwebtoken";
+
+import bcrypt from "bcrypt";
+
 import { Apperror } from "../utlis/Apperror.js";
 
 export const login = async (req, res, next) => {
@@ -11,26 +14,23 @@ export const login = async (req, res, next) => {
       return Apperror(next, "Email & Password required!", 400);
     }
 
-    const [users] = await db.execute("SELECT * FROM users WHERE email = ?", [
-      email,
-    ]);
+    // ✅ Fetch user + branch in a single query
+    const [users] = await db.execute(
+      `SELECT u.user_id, u.name, u.email, u.role, u.password, u.branch_id,
+              b.branch_name
+       FROM users u
+       LEFT JOIN branch b ON u.branch_id = b.branch_id
+       WHERE u.email = ?`,
+      [email]
+    );
 
-    // user check
     if (users.length === 0) {
       return Apperror(next, "Invalid Credentials", 400);
     }
 
-    const [branch] = await db.execute(
-      `SELECT u.name,u.user_id,u.email,u.role,b.branch_name FROM users u LEFT JOIN branch b ON u.branch_id=b.branch_id WHERE u.email=?`,
-      [email]
-    );
-    if (branch.length === 0) {
-      return Apperror(next, "No branch assigned to this user", 400);
-    }
-
     const user = users[0];
 
-    //  password must exist
+    // Password check
     if (!user.password) {
       return Apperror(next, "Password not set for this user", 400);
     }
@@ -39,25 +39,24 @@ export const login = async (req, res, next) => {
       String(password),
       String(user.password)
     );
-
     if (!isMatch) {
       return Apperror(next, "Invalid Credentials", 400);
     }
 
+    // ✅ JWT payload includes branch_id
     const token = jwt.sign(
       {
         user_id: user.user_id,
         name: user.name,
         email: user.email,
         role: user.role,
-        branch_id: user.branch_id,
+        branch_id: user.branch_id, // now guaranteed
       },
       process.env.Secretkey,
-      {
-        expiresIn: process.env.expire,
-      }
+      { expiresIn: process.env.expire }
     );
 
+    // Set cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: false, // production ma true
@@ -65,15 +64,16 @@ export const login = async (req, res, next) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
+    // Response
     res.status(200).json({
       status: "success",
       message: "Login successful",
       user: {
-        id: user.id,
+        id: user.user_id,
         name: user.name,
         email: user.email,
         role: user.role,
-        branch_name: branch[0].branch_name,
+        branch_name: user.branch_name,
         branch_id: user.branch_id,
       },
       token,
