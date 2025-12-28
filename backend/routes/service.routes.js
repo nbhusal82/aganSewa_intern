@@ -25,7 +25,7 @@ service_Router.get(
   "/get",
   islogin,
   authorizeRoles("manager", "admin"),
-  branchAccess,
+  
   AllService
 );
 service_Router.delete(

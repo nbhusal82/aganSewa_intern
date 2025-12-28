@@ -5,7 +5,6 @@ import { removeImage } from "../utlis/removeImg.js";
 export const addservices = async (req, res, next) => {
   try {
     const { services_name, description, branch_id } = req.body;
-    const { role, branch_id: userBranchId } = req.user;
 
     // Required fields
     if (!services_name || !description) {
@@ -13,23 +12,10 @@ export const addservices = async (req, res, next) => {
       return Apperror(next, "All fields are required", 400);
     }
 
-    //  Decide branch_id (manager vs admin)
-    let finalBranchId;
-
-    if (role === "admin") {
-      if (!branch_id) {
-        return Apperror(next, "branch_id is required", 400);
-      }
-      finalBranchId = branch_id;
-    } else {
-      // manager → afno branch matra
-      finalBranchId = userBranchId;
-    }
-
     // Check branch exists
     const [branch] = await db.query(
       "SELECT branch_id FROM branch WHERE branch_id = ?",
-      [finalBranchId]
+      [branch_id]
     );
 
     if (branch.length === 0) {
@@ -115,7 +101,7 @@ export const DeleteService = async (req, res, next) => {
 export const updateService = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { services_name , description } = req.body;
+    const { services_name, description } = req.body;
     const { role, branch_id } = req.user;
     // console.log(req.body);
 
