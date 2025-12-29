@@ -11,13 +11,13 @@ const userSlice = createSlice({
     setUser: (state, action) => {
       state.email = action.payload.email;
       state.role = action.payload.role;
-      state.isAuth = !!action.payload; // !! is used for  change bollean
+      state.isAuth = true;
     },
-    // logout: (state) => {
-    //   state.email = "";
-    //   state.role = "";
-    //   state.isAuth = false;
-    // },
+    logout: (state) => {
+      state.email = "";
+      state.role = "";
+      state.isAuth = false;
+    },
   },
 });
 export const { setUser, logout } = userSlice.actions;

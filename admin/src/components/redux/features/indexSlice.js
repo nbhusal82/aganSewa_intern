@@ -8,4 +8,4 @@ export const indexSlice = createApi({
   baseQuery,
   tagTypes: ["auth"],
   endpoints: (builder) => ({}),
-});
+});``

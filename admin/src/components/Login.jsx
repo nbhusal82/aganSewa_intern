@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 import Input from "./shared/Input";
 import { useLoginMutation } from "./redux/features/authSlice";
+import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { logout, setUser } from "./redux/features/authState";
 
 const Login = () => {
   const [login] = useLoginMutation();
 
-  // const navigate = useNavigate();
-  // const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [fromdata, setFromData] = useState({
     email: "",
@@ -15,11 +19,25 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!fromdata.email || !fromdata.password) {
+      toast.error("Please fill all filed");
+
+      return;
+    }
     try {
-      const res = await login(fromdata).unwrap();
-      console.log(res);
+      const res = await login(fromdata).unwrap(); // api call by redux
+
+      dispatch(setUser(res?.user));
+      if (res.user.role === "admin") {
+        toast.success("Welcome Admin");
+        navigate("/dashboard");
+      } else {
+        toast.error("You are not authorized as admin");
+        dispatch(logout());
+      }
+     
     } catch (error) {
-      console.log("error", error);
+      toast.error(error.data?.message || "Login failed");
     }
   };
 

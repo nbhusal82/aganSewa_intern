@@ -10,6 +10,14 @@ export const authApi = indexSlice.injectEndpoints({
       }),
       providesTags: ["auth"],
     }),
+    logout: builder.mutation({
+      query: (data) => ({
+        url: "/users/logout",
+        method: "POST",
+        body: data,
+      }),
+      providesTags: ["auth"],
+    }),
   }),
 });
-export const { useLoginMutation } = authApi;
+export const { useLoginMutation, useLogoutMutation } = authApi;
