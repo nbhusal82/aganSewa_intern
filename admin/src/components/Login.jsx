@@ -1,22 +1,32 @@
 import React, { useState } from "react";
 import Input from "./shared/Input";
+import { useLoginMutation } from "./redux/features/authSlice";
 
 const Login = () => {
+  const [login] = useLoginMutation();
+
+  // const navigate = useNavigate();
+  // const dispatch = useDispatch();
+
   const [fromdata, setFromData] = useState({
     email: "",
     password: "",
   });
-        console.log(fromdata);
-  const handleSubmit = (e) => {
 
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("hello" + fromdata.email);
+    try {
+      const res = await login(fromdata).unwrap();
+      console.log(res);
+    } catch (error) {
+      console.log("error", error);
+    }
   };
 
   const handelChange = (e) => {
     const { id, value } = e.target;
-      setFromData({
-        ...fromdata,
+    setFromData({
+      ...fromdata,
       [id]: value,
     });
   };

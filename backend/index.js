@@ -8,13 +8,22 @@ import service_Router from "./routes/service.routes.js";
 import site_router from "./routes/site.routes.js";
 import staff_router from "./routes/staff.routes.js";
 import cookie_parser from "cookie-parser";
+import cors from "cors";
+
 dotenv.config();
 
 const app = express();
+app.use(express.json());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 const PORT = process.env.PORT;
 app.use(cookie_parser());
 app.use("/uploads", express.static("uploads"));
-app.use(express.json());
+
 app.use("/api/users", router);
 app.use("/api/branch", branch_router);
 app.use("/api/service", service_Router);
