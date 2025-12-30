@@ -66,6 +66,35 @@ export const deleteprovince = async (req, res, next) => {
   }
 };
 
+export const updateprovince = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { province_name } = req.body;
+
+    if (!province_name) {
+      return Apperror(next, "Province name is required", 400);
+    }
+
+    const [check] = await db.query(
+      "SELECT * FROM province WHERE province_id = ?",
+      [id]
+    );
+    if (check.length === 0) {
+      return Apperror(next, "Province not found", 400);
+    }
+
+    await db.query(
+      "UPDATE province SET province_name = ? WHERE province_id = ?",
+      [province_name, id]
+    );
+    return res.status(200).json({
+      message: "Province updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 //district
 export const add_district = async (req, res, next) => {
   try {
@@ -106,7 +135,11 @@ export const add_district = async (req, res, next) => {
 
 export const get_district = async (req, res, next) => {
   try {
-    const [alldistrict] = await db.query("SELECT * FROM district");
+    const [alldistrict] = await db.query(
+      `SELECT d.district_id, d.district_name, d.province_id, p.province_name 
+       FROM district d 
+       LEFT JOIN province p ON d.province_id = p.province_id`
+    );
     return res.status(201).json({
       message: "available district..",
       data: alldistrict,
@@ -131,6 +164,35 @@ export const delete_district = async (req, res, next) => {
     await db.query("DELETE FROM district WHERE district_id=?", [id]);
     return res.status(200).json({
       message: "District delete successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const update_district = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { district_name, province_id } = req.body;
+
+    if (!district_name || !province_id) {
+      return Apperror(next, "District name and province ID are required", 400);
+    }
+
+    const [check] = await db.query(
+      "SELECT * FROM district WHERE district_id = ?",
+      [id]
+    );
+    if (check.length === 0) {
+      return Apperror(next, "District not found", 400);
+    }
+
+    await db.query(
+      "UPDATE district SET district_name = ?, province_id = ? WHERE district_id = ?",
+      [district_name, province_id, id]
+    );
+    return res.status(200).json({
+      message: "District updated successfully",
     });
   } catch (error) {
     next(error);
@@ -200,6 +262,35 @@ export const deletebranch = async (req, res, next) => {
 
     return res.status(200).json({
       message: "Branch deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updatebranch = async (req, res, next) => {
+  try {
+    const { branch_id } = req.params;
+    const { branch_name, district_id, Remark } = req.body;
+
+    if (!branch_name || !district_id) {
+      return Apperror(next, "Branch name and district ID are required", 400);
+    }
+
+    const [check] = await db.query(
+      "SELECT * FROM branch WHERE branch_id = ?",
+      [branch_id]
+    );
+    if (check.length === 0) {
+      return Apperror(next, "Branch not found", 400);
+    }
+
+    await db.query(
+      "UPDATE branch SET branch_name = ?, district_id = ?, Remark = ? WHERE branch_id = ?",
+      [branch_name, district_id, Remark, branch_id]
+    );
+    return res.status(200).json({
+      message: "Branch updated successfully",
     });
   } catch (error) {
     next(error);

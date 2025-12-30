@@ -16,12 +16,12 @@ import { toast } from "react-toastify";
 
 const Sidebar = () => {
   const menu = [
-    { name: "Dashboard", path: "admin/dashboard", icon: LayoutDashboard },
-    { name: "Province", path: "admin/province", icon: Map },
-    { name: "District", path: "admin/district", icon: MapPin },
-    { name: "Branch", path: "admin/branch", icon: Building2 },
-    { name: "Users", path: "admin/users", icon: Users },
-    { name: "Profile", path: "admin/profile", icon: UserCircle },
+    { name: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Province", path: "/province", icon: Map },
+    { name: "District", path: "/district", icon: MapPin },
+    { name: "Branch", path: "/branch", icon: Building2 },
+    { name: "Users", path: "/users", icon: Users },
+    { name: "Profile", path: "/profile", icon: UserCircle },
   ];
 
   const dispatch = useDispatch();
