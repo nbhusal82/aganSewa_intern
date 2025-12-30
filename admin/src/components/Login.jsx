@@ -30,12 +30,11 @@ const Login = () => {
       dispatch(setUser(res?.user));
       if (res.user.role === "admin") {
         toast.success("Welcome Admin");
-        navigate("/dashboard");
+        navigate("/admin/dashboard");
       } else {
         toast.error("You are not authorized as admin");
         dispatch(logout());
       }
-     
     } catch (error) {
       toast.error(error.data?.message || "Login failed");
     }
