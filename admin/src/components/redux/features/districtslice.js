@@ -21,7 +21,10 @@ const districtApi = indexSlice.injectEndpoints({
       query: (data) => ({
         url: `/branch/update-dis/${data.id}`,
         method: "PATCH",
-        body: { district_name: data.district_name, province_id: data.province_id },
+        body: {
+          district_name: data.district_name,
+          province_id: data.province_id,
+        },
       }),
       invalidatesTags: ["district"],
     }),
@@ -31,6 +34,41 @@ const districtApi = indexSlice.injectEndpoints({
         method: "DELETE",
       }),
       invalidatesTags: ["district"],
+    }),
+    getmanager: builder.query({
+      query: () => ({
+        url: `/users/getmanager`,
+        method: "GET",
+      }),
+      providesTags: ["manager"],
+    }),
+    addmanager: builder.mutation({
+      query: (data) => ({
+        url: `/users/addmanager`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["manager"],
+    }),
+    updatemanager: builder.mutation({
+      query: (data) => ({
+        url: `/users/updatemanager/${data.id}`,
+        method: "PATCH",
+        body: {
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          role: data.role,
+        },
+      }),
+      invalidatesTags: ["manager"],
+    }),
+    deletemanager: builder.mutation({
+      query: (id) => ({
+        url: `/users/deletemanager/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["manager"],
     }),
   }),
 });

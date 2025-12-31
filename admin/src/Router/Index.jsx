@@ -4,15 +4,16 @@ import { adminRoutes } from "./AdminRoutes";
 import { Adminlayout } from "../Layout/Admin";
 import Login from "../components/Login";
 import NOTFound from "../components/shared/NotFound";
-import Province from "../components/pages/provience/ProvienceDashboard";
-
-import District from "../components/pages/district/Districtdash";
-import Branch from "../components/pages/branch/Branchdas";
+import { Guard } from "./Guard";
 
 export const router = createBrowserRouter([
   {
     path: "/admin",
-    element: <Adminlayout />,
+    element: (
+      <Guard>
+        <Adminlayout />
+      </Guard>
+    ),
     children: adminRoutes,
   },
   {
@@ -22,18 +23,5 @@ export const router = createBrowserRouter([
   {
     path: "*",
     element: <NOTFound />,
-  },
-
-  {
-    path: "/province",
-    element: <Province />,
-  },
-  {
-    path: "/district",
-    element: <District />,
-  },
-  {
-    path: "/branch",
-    element: <Branch />,
   },
 ]);

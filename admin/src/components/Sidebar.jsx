@@ -1,46 +1,39 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
   Map,
   MapPin,
   Building2,
   Users,
   UserCircle,
   LogOut,
+  Home,
 } from "lucide-react";
 import { logout } from "./redux/features/authState";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useLogoutMutation } from "./redux/features/authSlice";
-import { useEffect } from "react";
+
 import { toast } from "react-toastify";
 
 const Sidebar = () => {
   const menu = [
-    { name: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
-    { name: "Province", path: "/province", icon: Map },
-    { name: "District", path: "/district", icon: MapPin },
-    { name: "Branch", path: "/branch", icon: Building2 },
-    { name: "Users", path: "/users", icon: Users },
-    { name: "Profile", path: "/profile", icon: UserCircle },
+    { name: "Dashboard", path: "/admin/dashboard", icon: Home },
+    { name: "Province", path: "/admin/province", icon: Map },
+    { name: "District", path: "/admin/district", icon: MapPin },
+    { name: "Branch", path: "/admin/branch", icon: Building2 },
+    { name: "Manager", path: "/admin/users", icon: Users },
+    { name: "Profile", path: "admin/profile", icon: UserCircle },
   ];
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuth } = useSelector((state) => state.user);
 
   const [logoutMutation] = useLogoutMutation();
 
-  useEffect(() => {
-    if (!isAuth) {
-      navigate("/");
-    }
-  }, [isAuth, navigate]);
-
   const handlelogout = async () => {
     try {
-      dispatch(logout());
       const res = await logoutMutation().unwrap();
       toast.success(res.message || "Logged Out Successfully");
+      dispatch(logout());
       navigate("/");
     } catch (error) {
       toast.error(error?.data?.message || "Logout Failed");

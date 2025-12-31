@@ -7,8 +7,12 @@ import { Error } from "../../shared/Error";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { useAddProvienceMutation, useDeleteprovienceMutation, useGetProvienceQuery, useUpdateprovienceMutation } from "../../redux/features/branchSlice";
-
+import {
+  useAddProvienceMutation,
+  useDeleteprovienceMutation,
+  useGetProvienceQuery,
+  useUpdateprovienceMutation,
+} from "../../redux/features/branchSlice";
 
 const Province = () => {
   const { role } = useSelector((state) => state.user);

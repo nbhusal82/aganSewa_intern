@@ -1,14 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Input from "./shared/Input";
 import { useLoginMutation } from "./redux/features/authSlice";
 import { toast } from "react-toastify";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logout, setUser } from "./redux/features/authState";
 
 const Login = () => {
   const [login] = useLoginMutation();
-
+  const { isAuth } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -16,6 +16,11 @@ const Login = () => {
     email: "",
     password: "",
   });
+  useEffect(() => {
+    if (!isAuth) {
+      navigate("/");
+    }
+  }, [isAuth, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -1,8 +1,25 @@
 import Dashboard from "../components/Dashboard";
+import Branch from "../components/pages/branch/Branchdas";
+import District from "../components/pages/district/Districtdash";
+import Province from "../components/pages/provience/ProvienceDashboard";
+
 
 export const adminRoutes = [
   {
     path: "dashboard",
     element: <Dashboard />,
   },
+  {
+    path: "province",
+    element: <Province />,
+  },
+  {
+    path: "district",
+    element: <District />,
+  },
+  {
+    path: "branch",
+    element: <Branch />,
+  },
+ 
 ];
