@@ -73,7 +73,7 @@ const Province = () => {
 
     try {
       await deleteProvience(id).unwrap();
-      toast.success("Province deleted successfully");
+      toast.success(data?.message || "Province deleted successfully");
     } catch (err) {
       toast.error(err?.data?.message || "Delete failed");
     }

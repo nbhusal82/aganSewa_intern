@@ -77,4 +77,8 @@ export const {
   useGetdistrictQuery,
   useUpdatedistrictMutation,
   useDeletedistrictMutation,
+  useAddmanagerMutation,
+  useGetmanagerQuery,
+  useUpdatemanagerMutation,
+  useDeletemanagerMutation,
 } = districtApi;

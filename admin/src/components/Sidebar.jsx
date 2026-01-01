@@ -20,7 +20,7 @@ const Sidebar = () => {
     { name: "Province", path: "/admin/province", icon: Map },
     { name: "District", path: "/admin/district", icon: MapPin },
     { name: "Branch", path: "/admin/branch", icon: Building2 },
-    { name: "Manager", path: "/admin/users", icon: Users },
+    { name: "Manager", path: "/admin/manager", icon: Users },
     { name: "Profile", path: "admin/profile", icon: UserCircle },
   ];
 

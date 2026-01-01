@@ -56,6 +56,13 @@ export const deleteprovince = async (req, res, next) => {
     if (check.length === 0) {
       return Apperror(next, "Province not found", 400);
     }
+    const [district] = await db.query(
+      "SELECT * FROM district WHERE province_id = ?",
+      [id]
+    );
+    if (district.length > 0) {
+      return Apperror(next, "Province has district Cannot Delete..", 400);
+    }
 
     await db.query("DELETE FROM province WHERE province_id = ?", [id]);
     return res.status(200).json({
@@ -160,6 +167,13 @@ export const delete_district = async (req, res, next) => {
     ]);
     if (rows.length === 0) {
       return Apperror("district not found", 400);
+    }
+    const [branch] = await db.query(
+      "SELECT * FROM branch WHERE district_id = ?",
+      [id]
+    );
+    if (branch.length > 0) {
+      return Apperror(next, "District has Branch Cannot Delete..", 400);
     }
     await db.query("DELETE FROM district WHERE district_id=?", [id]);
     return res.status(200).json({
@@ -277,10 +291,9 @@ export const updatebranch = async (req, res, next) => {
       return Apperror(next, "Branch name and district ID are required", 400);
     }
 
-    const [check] = await db.query(
-      "SELECT * FROM branch WHERE branch_id = ?",
-      [branch_id]
-    );
+    const [check] = await db.query("SELECT * FROM branch WHERE branch_id = ?", [
+      branch_id,
+    ]);
     if (check.length === 0) {
       return Apperror(next, "Branch not found", 400);
     }

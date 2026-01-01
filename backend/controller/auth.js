@@ -98,7 +98,7 @@ export const signout = async (req, res, next) => {
 export const addbranchmanager = async (req, res, next) => {
   try {
     const { name, email, password, branch_id } = req.body;
-    if (!name || !email || !password || !branch_id) {
+    if (!name || !email || !password ) {
       return Apperror(next, "All Filed are Required", 400);
     }
     const [check_branch] = await db.query(
@@ -124,9 +124,10 @@ export const addbranchmanager = async (req, res, next) => {
         400
       );
     }
+    const hashedPassword = await bcrypt.hash(password, 10);
     await db.query(
       "INSERT INTO users (name, email, password, branch_id) VALUES ( ?, ?, ?, ?)",
-      [name, email, password, branch_id]
+      [name, email, hashedPassword, branch_id]
     );
     res.status(201).json({
       status: "success",

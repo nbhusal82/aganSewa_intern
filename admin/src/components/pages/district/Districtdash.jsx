@@ -13,7 +13,6 @@ import {
 } from "../../redux/features/districtslice";
 import { useGetProvienceQuery } from "../../redux/features/branchSlice";
 
-
 const District = () => {
   const navigate = useNavigate();
 
@@ -78,7 +77,7 @@ const District = () => {
     if (window.confirm("Delete this district?")) {
       try {
         await deleteDistrict(id).unwrap();
-        toast.success("District deleted successfully");
+        toast.success(data?.message || "District deleted successfully");
       } catch (err) {
         toast.error(err?.data?.message || "Delete failed");
       }

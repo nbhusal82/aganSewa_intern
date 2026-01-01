@@ -2,7 +2,7 @@ import Dashboard from "../components/Dashboard";
 import Branch from "../components/pages/branch/Branchdas";
 import District from "../components/pages/district/Districtdash";
 import Province from "../components/pages/provience/ProvienceDashboard";
-
+import Manager from "../components/pages/user/Manager";
 
 export const adminRoutes = [
   {
@@ -21,5 +21,8 @@ export const adminRoutes = [
     path: "branch",
     element: <Branch />,
   },
- 
+  {
+    path: "manager",
+    element: <Manager />,
+  },
 ];
