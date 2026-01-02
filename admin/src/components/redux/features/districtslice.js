@@ -17,17 +17,7 @@ const districtApi = indexSlice.injectEndpoints({
       }),
       invalidatesTags: ["district"],
     }),
-    updatedistrict: builder.mutation({
-      query: (data) => ({
-        url: `/branch/update-dis/${data.id}`,
-        method: "PATCH",
-        body: {
-          district_name: data.district_name,
-          province_id: data.province_id,
-        },
-      }),
-      invalidatesTags: ["district"],
-    }),
+
     deletedistrict: builder.mutation({
       query: (id) => ({
         url: `/branch/delete-dis/${id}`,
@@ -35,6 +25,14 @@ const districtApi = indexSlice.injectEndpoints({
       }),
       invalidatesTags: ["district"],
     }),
+    getdistrictbyid: builder.query({
+      query: (id) => ({
+        url: `/branch/getdistrictid/${id}`,
+        method: "GET",
+      }),
+      providesTags: ["district"],
+    }),
+
     getmanager: builder.query({
       query: () => ({
         url: `/users/getmanager`,
@@ -75,7 +73,7 @@ const districtApi = indexSlice.injectEndpoints({
 export const {
   useAdddistrictMutation,
   useGetdistrictQuery,
-  useUpdatedistrictMutation,
+useGetdistrictbyidQuery,
   useDeletedistrictMutation,
   useAddmanagerMutation,
   useGetmanagerQuery,

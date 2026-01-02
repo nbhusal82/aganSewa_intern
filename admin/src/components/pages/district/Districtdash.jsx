@@ -1,33 +1,37 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Loading } from "../../shared/Loading";
 import { Error } from "../../shared/Error";
+import DetailsModal from "../../shared/Model";
 
 import {
   useAdddistrictMutation,
   useDeletedistrictMutation,
   useGetdistrictQuery,
-  useUpdatedistrictMutation,
 } from "../../redux/features/districtslice";
-import { useGetProvienceQuery } from "../../redux/features/branchSlice";
+import { useGetProvienceQuery, useGetBranchesQuery } from "../../redux/features/branchSlice";
 
 const District = () => {
   const navigate = useNavigate();
 
   const { data: districtData, isLoading, isError } = useGetdistrictQuery();
   const { data: provinceData } = useGetProvienceQuery();
+  const { data: branchData } = useGetBranchesQuery();
 
   const districts = districtData?.data || [];
   const provinces = provinceData?.data || [];
+  const allBranches = branchData?.data || [];
 
   const [addDistrict] = useAdddistrictMutation();
-  const [updateDistrict] = useUpdatedistrictMutation();
+
   const [deleteDistrict] = useDeletedistrictMutation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editId, setEditId] = useState(null);
+  const [showBranchModal, setShowBranchModal] = useState(false);
+  const [selectedDistrict, setSelectedDistrict] = useState(null);
+ 
 
   const initialState = {
     district_name: "",
@@ -45,32 +49,21 @@ const District = () => {
     }
 
     try {
-      if (editId) {
-        await updateDistrict({
-          id: editId,
-          ...formData,
-        }).unwrap();
-        toast.success("District updated");
-      } else {
+      {
         await addDistrict(formData).unwrap();
         toast.success("District added");
       }
 
       setFormData(initialState);
-      setEditId(null);
       setIsModalOpen(false);
     } catch (err) {
       toast.error(err?.data?.message || "Operation failed");
     }
   };
 
-  const handleEdit = (district) => {
-    setEditId(district.district_id);
-    setFormData({
-      district_name: district.district_name,
-      province_id: district.province_id,
-    });
-    setIsModalOpen(true);
+  const handleView = (district) => {
+    setSelectedDistrict(district);
+    setShowBranchModal(true);
   };
 
   const handleDelete = async (id) => {
@@ -105,7 +98,6 @@ const District = () => {
 
         <button
           onClick={() => {
-            setEditId(null);
             setFormData(initialState);
             setIsModalOpen(true);
           }}
@@ -143,10 +135,10 @@ const District = () => {
                 <td className="px-6 py-3">{d.province_name}</td>
                 <td className="px-6 py-3 flex gap-3">
                   <button
-                    onClick={() => handleEdit(d)}
+                    onClick={() => handleView(d)}
                     className=" cursor-pointer flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-full"
                   >
-                    <Pencil size={16} /> Edit
+                    <Eye size={16} /> View
                   </button>
                   <button
                     onClick={() => handleDelete(d.district_id)}
@@ -166,7 +158,7 @@ const District = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white w-96 p-6 rounded-xl">
             <h2 className="text-xl font-bold mb-4">
-              {editId ? "Edit District" : "Add District"}
+              Add District
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -207,13 +199,51 @@ const District = () => {
                   type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded"
                 >
-                  {editId ? "Update" : "Add"}
+                  Add
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* BRANCHES MODAL */}
+      <DetailsModal
+        show={showBranchModal}
+        onClose={() => setShowBranchModal(false)}
+        title={selectedDistrict ? `Branches in ${selectedDistrict.district_name}` : "Branches"}
+        size="lg"
+      >
+        <div className="space-y-3">
+          {selectedDistrict ? (
+            allBranches.filter(b => b.district_id === selectedDistrict.district_id).length > 0 ? (
+              allBranches
+                .filter(b => b.district_id === selectedDistrict.district_id)
+                .map((branch) => (
+                  <div
+                    key={branch.branch_id}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
+                  >
+                    <span className="text-sm text-gray-600 font-mono">
+                      #{branch.branch_id}
+                    </span>
+                    <span className="font-medium text-gray-800">
+                      {branch.branch_name}
+                    </span>
+                  </div>
+                ))
+            ) : (
+              <p className="text-gray-500 italic text-center py-4">
+                No branches found in this district
+              </p>
+            )
+          ) : (
+            <p className="text-gray-500 italic text-center py-4">
+              Loading...
+            </p>
+          )}
+        </div>
+      </DetailsModal>
     </div>
   );
 };

@@ -73,29 +73,19 @@ export const deleteprovince = async (req, res, next) => {
   }
 };
 
-export const updateprovince = async (req, res, next) => {
+export const GetProvienceById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { province_name } = req.body;
-
-    if (!province_name) {
-      return Apperror(next, "Province name is required", 400);
+    if (!id) {
+      return Apperror(next, "Provience id is required", 400);
     }
-
-    const [check] = await db.query(
-      "SELECT * FROM province WHERE province_id = ?",
+    const [provience] = await db.query(
+      "SELECT district_name,district_id from district  WHERE province_id=?",
       [id]
     );
-    if (check.length === 0) {
-      return Apperror(next, "Province not found", 400);
-    }
-
-    await db.query(
-      "UPDATE province SET province_name = ? WHERE province_id = ?",
-      [province_name, id]
-    );
     return res.status(200).json({
-      message: "Province updated successfully",
+      message: "Provience district  fetched successfully",
+      data: provience,
     });
   } catch (error) {
     next(error);
@@ -184,29 +174,19 @@ export const delete_district = async (req, res, next) => {
   }
 };
 
-export const update_district = async (req, res, next) => {
+export const GetDistrictById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { district_name, province_id } = req.body;
-
-    if (!district_name || !province_id) {
-      return Apperror(next, "District name and province ID are required", 400);
+    if (!id) {
+      return Apperror(next, "District id is required", 400);
     }
-
-    const [check] = await db.query(
-      "SELECT * FROM district WHERE district_id = ?",
+    const [district] = await db.query(
+      "SELECT branch_name,branch_id from branch WHERE district_id=?",
       [id]
     );
-    if (check.length === 0) {
-      return Apperror(next, "District not found", 400);
-    }
-
-    await db.query(
-      "UPDATE district SET district_name = ?, province_id = ? WHERE district_id = ?",
-      [district_name, province_id, id]
-    );
     return res.status(200).json({
-      message: "District updated successfully",
+      message: "District fetched successfully",
+      data: district,
     });
   } catch (error) {
     next(error);

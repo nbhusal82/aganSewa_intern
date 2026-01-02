@@ -9,9 +9,10 @@ import {
   get_district,
   getbranch,
   getprovince,
-  updateprovince,
-  update_district,
+ 
   updatebranch,
+  GetProvienceById,
+  GetDistrictById,
 } from "../controller/branch.js";
 
 import { islogin } from "../middlewares/islogin.js";
@@ -21,8 +22,14 @@ const branch_router = express.Router();
 
 branch_router.post("/", islogin, authorizeRoles("admin"), addprovince);
 branch_router.get("/", islogin, authorizeRoles("admin"), getprovince);
-branch_router.patch("/:id", islogin, authorizeRoles("admin"), updateprovince);
+
 branch_router.delete("/:id", islogin, authorizeRoles("admin"), deleteprovince);
+branch_router.get(
+  "getprovienceid/:id",
+  islogin,
+  authorizeRoles("admin"),
+  GetProvienceById
+);
 
 //district
 
@@ -33,18 +40,19 @@ branch_router.get(
   authorizeRoles("admin", "manager"),
   get_district
 );
-branch_router.patch(
-  "/update-dis/:id",
-  islogin,
-  authorizeRoles("admin", "manager"),
-  update_district
-);
+
 branch_router.delete(
   "/delete-dis/:id",
   islogin,
   authorizeRoles("admin", "manager"),
-  
+
   delete_district
+);
+branch_router.get(
+  "/getdistrictid/:id",
+  islogin,
+  authorizeRoles("admin"),
+  GetDistrictById
 );
 
 //branch
