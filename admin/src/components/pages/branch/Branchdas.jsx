@@ -2,11 +2,17 @@ import { useState } from "react";
 import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-
 import { Loading } from "../../shared/Loading";
 import { Error } from "../../shared/Error";
+import DetailsModal from "../../shared/Model";
 import { toast } from "react-toastify";
-import { useAddbranchMutation, useDeletebranchMutation, useGetBranchesQuery, useUpdatebranchMutation } from "../../redux/features/branchSlice";
+import {
+  useAddbranchMutation,
+  useDeletebranchMutation,
+  useGetBranchesQuery,
+  useGetProvienceQuery,
+  useUpdatebranchMutation,
+} from "../../redux/features/branchSlice";
 import { useGetdistrictQuery } from "../../redux/features/districtslice";
 
 const Branch = () => {
@@ -14,9 +20,10 @@ const Branch = () => {
 
   const { data: branchData, isLoading, isError } = useGetBranchesQuery();
   const { data: districtData } = useGetdistrictQuery();
-
+  const { data: provinceData } = useGetProvienceQuery();
   const branches = branchData?.data || [];
   const districts = districtData?.data || [];
+  const provinces = provinceData?.data || [];
 
   const [addBranch] = useAddbranchMutation();
   const [updateBranch] = useUpdatebranchMutation();
@@ -25,16 +32,32 @@ const Branch = () => {
   const initialState = {
     branch_name: "",
     district_id: "",
+    province_id: "",
   };
 
   const [formData, setFormData] = useState(initialState);
   const [editId, setEditId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filterProvince] = useState("");
+
+  // Filter districts based on selected province in form
+  const filteredDistricts = formData.province_id
+    ? districts.filter((d) => d.province_id === parseInt(formData.province_id))
+    : districts;
+
+  // Filter branches based on selected province filter
+  const filteredBranches = filterProvince
+    ? branches.filter((b) => b.province_id === parseInt(filterProvince))
+    : branches;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.branch_name || !formData.district_id) {
+    if (
+      !formData.branch_name ||
+      !formData.district_id ||
+      !formData.province_id
+    ) {
       toast.warning("All fields are required");
       return;
     }
@@ -61,6 +84,7 @@ const Branch = () => {
     setFormData({
       branch_name: branch.branch_name,
       district_id: branch.district_id,
+      province_id: branch.province_id,
     });
     setIsModalOpen(true);
   };
@@ -121,6 +145,7 @@ const Branch = () => {
               <th className="px-6 py-3 text-left text-emerald-800 font-semibold">
                 District
               </th>
+
               <th className="px-6 py-3 text-left text-emerald-800 font-semibold">
                 Actions
               </th>
@@ -128,11 +153,12 @@ const Branch = () => {
           </thead>
 
           <tbody>
-            {branches.map((b) => (
+            {filteredBranches.map((b) => (
               <tr key={b.branch_id} className="border-t hover:bg-emerald-50">
                 <td className="px-6 py-3">{b.branch_id}</td>
                 <td className="px-6 py-3 font-medium">{b.branch_name}</td>
                 <td className="px-6 py-3">{b.district_name}</td>
+                {/* <td className="px-6 py-3">{b.province_name}</td> */}
                 <td className="px-6 py-3 flex gap-3">
                   <button
                     onClick={() => handleEdit(b)}
@@ -154,58 +180,70 @@ const Branch = () => {
       </div>
 
       {/* MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white w-96 p-6 rounded-xl">
-            <h2 className="text-xl font-bold mb-4">
-              {editId ? "Edit Branch" : "Add Branch"}
-            </h2>
+      <DetailsModal
+        show={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editId ? "Edit Branch" : "Add Branch"}
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <select
+            value={formData.province_id}
+            onChange={(e) =>
+              setFormData({ ...formData, province_id: e.target.value })
+            }
+            className="w-full border p-2 rounded"
+          >
+            <option value="">Select Province</option>
+            {provinces.map((p) => (
+              <option key={p.province_id} value={p.province_id}>
+                {p.province_name}
+              </option>
+            ))}
+          </select>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <select
-                value={formData.district_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, district_id: e.target.value })
-                }
-                className="w-full border p-2 rounded"
-              >
-                <option value="">Select District</option>
-                {districts.map((d) => (
-                  <option key={d.district_id} value={d.district_id}>
-                    {d.district_name}
-                  </option>
-                ))}
-              </select>
+          <select
+            value={formData.district_id}
+            onChange={(e) =>
+              setFormData({ ...formData, district_id: e.target.value })
+            }
+            className="w-full border p-2 rounded"
+          >
+            <option value="">Select District</option>
+            {filteredDistricts.map((d) => (
+              <option key={d.district_id} value={d.district_id}>
+                {d.district_name}
+              </option>
+            ))}
+          </select>
 
-              <input
-                type="text"
-                placeholder="Branch Name"
-                value={formData.branch_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, branch_name: e.target.value })
-                }
-                className="w-full border p-2 rounded"
-              />
+          <input
+            type="text"
+            placeholder="Branch Name"
+            value={formData.branch_name}
+            onChange={(e) =>
+              setFormData({ ...formData, branch_name: e.target.value })
+            }
+            className="w-full border p-2 rounded"
+          />
 
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-200 rounded"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded"
-                >
-                  {editId ? "Update" : "Add"}
-                </button>
-              </div>
-            </form>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className="px-4 py-2 bg-gray-200 rounded"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              {editId ? "Update" : "Add"}
+            </button>
           </div>
-        </div>
-      )}
+        </form>
+      </DetailsModal>
     </div>
   );
 };

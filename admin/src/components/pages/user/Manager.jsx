@@ -7,13 +7,17 @@ import { useSelector } from "react-redux";
 
 import { Loading } from "../../shared/Loading";
 import { Error } from "../../shared/Error";
+import DetailsModal from "../../shared/Model";
 import {
   useAddmanagerMutation,
   useDeletemanagerMutation,
   useGetdistrictQuery,
   useGetmanagerQuery,
 } from "../../redux/features/districtslice";
-import { useGetBranchesQuery } from "../../redux/features/branchSlice";
+import {
+  useGetBranchesQuery,
+  useGetProvienceQuery,
+} from "../../redux/features/branchSlice";
 
 const Manager = () => {
   const navigate = useNavigate();
@@ -24,19 +28,42 @@ const Manager = () => {
     password: "",
     district_name: "",
     branch_name: "",
+    province: "",
   };
 
   const { data, isLoading, isError } = useGetmanagerQuery();
   const { data: branchData } = useGetBranchesQuery();
   const { data: districtData } = useGetdistrictQuery();
+  const { data: provinceData } = useGetProvienceQuery();
   const [addManager] = useAddmanagerMutation();
   const [deleteManager] = useDeletemanagerMutation();
 
   const managers = data?.data || [];
   const branches = branchData?.data || [];
+  const districts = districtData?.data || [];
+  const provinces = provinceData?.data || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState(initialstate);
+  const [filterProvince, setFilterProvince] = useState("");
+
+  // Filter districts based on selected province in form
+  const filteredDistricts = formData.province
+    ? districts.filter((d) => d.province_id === parseInt(formData.province))
+    : districts;
+
+  // Filter branches based on selected province in form
+  const filteredBranches = formData.province
+    ? branches.filter((b) => b.province_id === parseInt(formData.province))
+    : branches;
+
+  // Filter managers based on selected province filter
+  const filteredManagers = filterProvince
+    ? managers.filter((m) => {
+        const branch = branches.find((b) => b.branch_id === m.branch_id);
+        return branch?.province_id === parseInt(filterProvince);
+      })
+    : managers;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,13 +138,16 @@ const Manager = () => {
                 Branch Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold">
+                Province
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold">
                 Action
               </th>
             </tr>
           </thead>
 
           <tbody className="divide-y">
-            {managers.map((m) => {
+            {filteredManagers.map((m) => {
               // Find branch name from branches array
               const branch = branches.find((b) => b.branch_id === m.branch_id);
 
@@ -127,6 +157,9 @@ const Manager = () => {
                   <td className="px-6 py-4">{m.email}</td>
                   <td className="px-6 py-4">
                     {branch?.branch_name || m.branch_name || "N/A"}
+                  </td>
+                  <td className="px-6 py-4">
+                    {branch?.province_name || "N/A"}
                   </td>
                   <td className="px-6 py-4">
                     <button
@@ -144,83 +177,92 @@ const Manager = () => {
       </div>
 
       {/* MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center">
-          <div className="bg-white w-96 p-6 rounded-xl">
-            <h2 className="text-xl font-bold mb-4">Add Branch Manager</h2>
+      <DetailsModal
+        show={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Add Branch Manager"
+        size="md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            placeholder="Name"
+            className="w-full p-2 border rounded"
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+          <input
+            placeholder="Email"
+            className="w-full p-2 border rounded"
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full p-2 border rounded"
+            onChange={(e) =>
+              setFormData({ ...formData, password: e.target.value })
+            }
+          />
+          <select
+            className="w-full p-2 border rounded"
+            value={formData.province}
+            onChange={(e) =>
+              setFormData({ ...formData, province: e.target.value })
+            }
+          >
+            <option value="">Select Province</option>
+            {provinces.map((p) => (
+              <option key={p.province_id} value={p.province_id}>
+                {p.province_name}
+              </option>
+            ))}
+          </select>
 
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <input
-                placeholder="Name"
-                className="w-full p-2 border rounded"
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-              />
-              <input
-                placeholder="Email"
-                className="w-full p-2 border rounded"
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                className="w-full p-2 border rounded"
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-              />
-              <select
-                className="w-full p-2 border rounded"
-                value={formData.district_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, district_name: e.target.value })
-                }
-              >
-                <option value="">Select District</option>
-                {branches.map((district) => (
-                  <option
-                    key={district.district_id}
-                    value={district.district_id}
-                  >
-                    {district.district_name}
-                  </option>
-                ))}
-              </select>
+          <select
+            className="w-full p-2 border rounded"
+            value={formData.district_name}
+            onChange={(e) =>
+              setFormData({ ...formData, district_name: e.target.value })
+            }
+          >
+            <option value="">Select District</option>
+            {filteredDistricts.map((district) => (
+              <option key={district.district_id} value={district.district_id}>
+                {district.district_name}
+              </option>
+            ))}
+          </select>
 
-              <select
-                className="w-full p-2 border rounded"
-                value={formData.branch_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, branch_name: e.target.value })
-                }
-              >
-                <option value="">Select Branch</option>
-                {branches.map((branch) => (
-                  <option key={branch.branch_id} value={branch.branch_name}>
-                    {branch.branch_name}
-                  </option>
-                ))}
-              </select>
+          <select
+            className="w-full p-2 border rounded"
+            value={formData.branch_name}
+            onChange={(e) =>
+              setFormData({ ...formData, branch_name: e.target.value })
+            }
+          >
+            <option value="">Select Branch</option>
+            {filteredBranches.map((branch) => (
+              <option key={branch.branch_id} value={branch.branch_name}>
+                {branch.branch_name}
+              </option>
+            ))}
+          </select>
 
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-200 rounded"
-                >
-                  Cancel
-                </button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded">
-                  Add
-                </button>
-              </div>
-            </form>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className="px-4 py-2 bg-gray-200 rounded"
+            >
+              Cancel
+            </button>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded">
+              Add
+            </button>
           </div>
-        </div>
-      )}
+        </form>
+      </DetailsModal>
     </div>
   );
 };

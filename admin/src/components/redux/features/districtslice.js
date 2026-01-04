@@ -25,13 +25,6 @@ const districtApi = indexSlice.injectEndpoints({
       }),
       invalidatesTags: ["district"],
     }),
-    getdistrictbyid: builder.query({
-      query: (id) => ({
-        url: `/branch/getdistrictid/${id}`,
-        method: "GET",
-      }),
-      providesTags: ["district"],
-    }),
 
     getmanager: builder.query({
       query: () => ({
@@ -73,7 +66,7 @@ const districtApi = indexSlice.injectEndpoints({
 export const {
   useAdddistrictMutation,
   useGetdistrictQuery,
-useGetdistrictbyidQuery,
+
   useDeletedistrictMutation,
   useAddmanagerMutation,
   useGetmanagerQuery,

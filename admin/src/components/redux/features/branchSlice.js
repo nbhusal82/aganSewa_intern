@@ -26,14 +26,6 @@ export const branchApi = indexSlice.injectEndpoints({
       invalidatesTags: ["provience"],
     }),
 
-    getProvienceById: builder.query({
-      query: (id) => ({
-        url: `/branch/getprovienceid/${id}`,
-        method: "GET",
-      }),
-      providesTags: ["provience"],
-    }),
-
     getBranches: builder.query({
       query: () => ({
         url: "/branch/getbranch",
@@ -64,20 +56,13 @@ export const branchApi = indexSlice.injectEndpoints({
       }),
       invalidatesTags: ["branch"],
     }),
-    getBranchesByDistrict: builder.query({
-      query: (districtId) => ({
-        url: `/branch/getbranchbydistrict/${districtId}`,
-        method: "GET",
-      }),
-      providesTags: ["branch"],
-    }),
   }),
 });
 export const {
   useAddProvienceMutation,
   useGetProvienceQuery,
   useDeleteprovienceMutation,
-  useGetProvienceByIdQuery,
+
   useAddbranchMutation,
   useGetBranchesQuery,
   useDeletebranchMutation,
