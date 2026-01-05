@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import db from "./config/dbconn.js";
 import router from "./routes/authRoutes.js";
 import branch_router from "./routes/branch.routes.js";
+import profile_router from "./routes/profile.js";
 import { sendError } from "./middlewares/errorhandler.js";
 import service_Router from "./routes/service.routes.js";
 import site_router from "./routes/site.routes.js";
@@ -27,6 +28,7 @@ app.use("/uploads", express.static("uploads"));
 
 app.use("/api/users", router);
 app.use("/api/branch", branch_router);
+app.use("/api/profile", profile_router);
 app.use("/api/service", service_Router);
 app.use("/api/site", site_router);
 app.use("/api/staff", staff_router);

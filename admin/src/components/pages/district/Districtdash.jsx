@@ -31,6 +31,9 @@ const District = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showBranchModal, setShowBranchModal] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState(null);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleteId, setDeleteId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
  
 
   const initialState = {
@@ -66,14 +69,15 @@ const District = () => {
     setShowBranchModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Delete this district?")) {
-      try {
-        await deleteDistrict(id).unwrap();
-        toast.success(data?.message || "District deleted successfully");
-      } catch (err) {
-        toast.error(err?.data?.message || "Delete failed");
-      }
+  const handleDelete = async () => {
+    try {
+      await deleteDistrict(deleteId).unwrap();
+      toast.success("District deleted successfully");
+      setShowDeleteModal(false);
+      setConfirmText("");
+      setDeleteId(null);
+    } catch (err) {
+      toast.error(err?.data?.message || "Delete failed");
     }
   };
 
@@ -141,7 +145,11 @@ const District = () => {
                     <Eye size={16} /> View
                   </button>
                   <button
-                    onClick={() => handleDelete(d.district_id)}
+                    onClick={() => {
+                      setDeleteId(d.district_id);
+                      setConfirmText("");
+                      setShowDeleteModal(true);
+                    }}
                     className=" cursor-pointer flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-full "
                   >
                     <Trash2 size={16} /> Delete
@@ -242,6 +250,47 @@ const District = () => {
               Loading...
             </p>
           )}
+        </div>
+      </DetailsModal>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      <DetailsModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirm Delete"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            To confirm deletion, please type <strong>DELETE</strong> below:
+          </p>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="Type DELETE to confirm"
+            className="w-full p-2 border rounded"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(false)}
+              className="px-4 py-2 bg-gray-200 rounded"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={confirmText !== "DELETE"}
+              className={`px-4 py-2 rounded ${
+                confirmText === "DELETE"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              Delete District
+            </button>
+          </div>
         </div>
       </DetailsModal>
     </div>

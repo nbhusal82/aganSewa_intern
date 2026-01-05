@@ -34,6 +34,9 @@ const Province = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState(initialData);
+  const [confirmText, setConfirmText] = useState("");
+  const [deleteId, setDeleteId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // 🔥 NEW
   const [selectedProvinceId, setSelectedProvinceId] = useState(null);
@@ -70,12 +73,13 @@ const Province = () => {
   };
 
   /* ================= DELETE ================= */
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this province?")) return;
-
+  const handleDelete = async () => {
     try {
-      await deleteProvience(id).unwrap();
+      await deleteProvience(deleteId).unwrap();
       toast.success("Province deleted successfully");
+      setShowDeleteModal(false);
+      setConfirmText("");
+      setDeleteId(null);
     } catch (err) {
       toast.error(err?.data?.message || "Delete failed");
     }
@@ -141,7 +145,11 @@ const Province = () => {
                       </button>
 
                       <button
-                        onClick={() => handleDelete(province.province_id)}
+                        onClick={() => {
+                          setDeleteId(province.province_id);
+                          setConfirmText("");
+                          setShowDeleteModal(true);
+                        }}
                         className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-full"
                       >
                         <Trash2 size={14} /> Delete
@@ -232,6 +240,47 @@ const Province = () => {
           ) : (
             <p className="text-gray-500 italic text-center py-4">Loading...</p>
           )}
+        </div>
+      </DetailsModal>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      <DetailsModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirm Delete"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            To confirm deletion, please type <strong>NABIN</strong> below:
+          </p>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="Type DELETE to confirm"
+            className="w-full p-2 border rounded"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(false)}
+              className="px-4 py-2 bg-gray-200 rounded"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={confirmText !== "DELETE"}
+              className={`px-4 py-2 rounded ${
+                confirmText === "DELETE"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              Delete Province
+            </button>
+          </div>
         </div>
       </DetailsModal>
     </div>

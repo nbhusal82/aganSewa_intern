@@ -222,10 +222,17 @@ export const addbranch = async (req, res, next) => {
 export const getbranch = async (req, res, next) => {
   try {
     const [allbranch] = await db.query(`SELECT 
-      b.branch_name,b.branch_id,b.Remark ,d.district_name ,d.district_id
-      FROM branch b 
-      LEFT JOIN district d
-      ON b.district_id=d.district_id`);
+  b.branch_id,
+  b.branch_name,
+  b.Remark,
+  d.district_id,
+  d.district_name,
+  p.province_id,
+  p.province_name
+FROM branch b
+LEFT JOIN district d ON b.district_id = d.district_id
+LEFT JOIN province p ON d.province_id = p.province_id;
+`);
     return res.status(200).json({
       message: "ALL branch ",
       data: allbranch,
@@ -289,3 +296,4 @@ export const updatebranch = async (req, res, next) => {
     next(error);
   }
 };
+ 

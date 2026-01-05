@@ -21,7 +21,7 @@ const Sidebar = () => {
     { name: "District", path: "/admin/district", icon: MapPin },
     { name: "Branch", path: "/admin/branch", icon: Building2 },
     { name: "Manager", path: "/admin/manager", icon: Users },
-    { name: "Profile", path: "admin/profile", icon: UserCircle },
+    { name: "Profile", path: "/admin/profile", icon: UserCircle },
   ];
 
   const dispatch = useDispatch();
@@ -41,7 +41,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="h-screen w-64 bg-slate-900 text-gray-200 flex flex-col">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-slate-900 text-gray-200 flex flex-col">
       {/* Logo */}
       <div className="h-16 flex items-center justify-center text-xl font-bold border-b border-slate-700">
         Agan Sewa

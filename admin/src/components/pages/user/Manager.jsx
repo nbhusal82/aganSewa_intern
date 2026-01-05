@@ -26,9 +26,9 @@ const Manager = () => {
     name: "",
     email: "",
     password: "",
-    district_name: "",
-    branch_name: "",
-    province: "",
+    district_id: "",
+    branch_id: "",
+    province_id: "",
   };
 
   const { data, isLoading, isError } = useGetmanagerQuery();
@@ -46,16 +46,30 @@ const Manager = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState(initialstate);
   const [filterProvince, setFilterProvince] = useState("");
+  const [confirmText, setConfirmText] = useState("");
+  const [deleteId, setDeleteId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Filter districts based on selected province in form
-  const filteredDistricts = formData.province
-    ? districts.filter((d) => d.province_id === parseInt(formData.province))
+  const filteredDistricts = formData.province_id
+    ? districts.filter((d) => d.province_id === parseInt(formData.province_id))
     : districts;
 
   // Filter branches based on selected province in form
-  const filteredBranches = formData.province
-    ? branches.filter((b) => b.province_id === parseInt(formData.province))
-    : branches;
+  const filteredBranches = branches.filter((b) => {
+    if (formData.province_id && formData.district_id) {
+      return (
+        b.province_id === parseInt(formData.province_id) &&
+        b.district_id === parseInt(formData.district_id)
+      );
+    }
+
+    if (formData.province_id) {
+      return b.province_id === parseInt(formData.province_id);
+    }
+
+    return true;
+  });
 
   // Filter managers based on selected province filter
   const filteredManagers = filterProvince
@@ -72,24 +86,19 @@ const Manager = () => {
       await addManager(formData).unwrap();
       toast.success("Branch manager added successfully");
       setIsModalOpen(false);
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        district_name: "",
-        branch_name: "",
-      });
+      setFormData(initialstate);
     } catch (err) {
       toast.error(err?.data?.message || "Failed to add manager");
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this manager?")) return;
-
+  const handleDelete = async () => {
     try {
-      await deleteManager(id).unwrap();
+      await deleteManager(deleteId).unwrap();
       toast.success("Manager deleted successfully");
+      setShowDeleteModal(false);
+      setConfirmText("");
+      setDeleteId(null);
     } catch (err) {
       toast.error(err?.data?.message || "Delete failed");
     }
@@ -123,6 +132,8 @@ const Manager = () => {
         )}
       </div>
 
+     
+
       {/* TABLE */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
@@ -137,9 +148,7 @@ const Manager = () => {
               <th className="px-6 py-3 text-left text-xs font-semibold">
                 Branch Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold">
-                Province
-              </th>
+              
               <th className="px-6 py-3 text-left text-xs font-semibold">
                 Action
               </th>
@@ -148,7 +157,6 @@ const Manager = () => {
 
           <tbody className="divide-y">
             {filteredManagers.map((m) => {
-              // Find branch name from branches array
               const branch = branches.find((b) => b.branch_id === m.branch_id);
 
               return (
@@ -158,12 +166,14 @@ const Manager = () => {
                   <td className="px-6 py-4">
                     {branch?.branch_name || m.branch_name || "N/A"}
                   </td>
-                  <td className="px-6 py-4">
-                    {branch?.province_name || "N/A"}
-                  </td>
+                  
                   <td className="px-6 py-4">
                     <button
-                      onClick={() => handleDelete(m.user_id)}
+                      onClick={() => {
+                        setDeleteId(m.user_id);
+                        setConfirmText("");
+                        setShowDeleteModal(true);
+                      }}
                       className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-full"
                     >
                       <Trash2 size={14} /> Delete
@@ -176,7 +186,7 @@ const Manager = () => {
         </table>
       </div>
 
-      {/* MODAL */}
+      {/* ADD MANAGER MODAL */}
       <DetailsModal
         show={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -206,9 +216,14 @@ const Manager = () => {
           />
           <select
             className="w-full p-2 border rounded"
-            value={formData.province}
+            value={formData.province_id}
             onChange={(e) =>
-              setFormData({ ...formData, province: e.target.value })
+              setFormData({
+                ...formData,
+                province_id: e.target.value,
+                district_id: "",
+                branch_id: "",
+              })
             }
           >
             <option value="">Select Province</option>
@@ -221,9 +236,13 @@ const Manager = () => {
 
           <select
             className="w-full p-2 border rounded"
-            value={formData.district_name}
+            value={formData.district_id}
             onChange={(e) =>
-              setFormData({ ...formData, district_name: e.target.value })
+              setFormData({
+                ...formData,
+                district_id: e.target.value,
+                branch_id: "",
+              })
             }
           >
             <option value="">Select District</option>
@@ -236,14 +255,14 @@ const Manager = () => {
 
           <select
             className="w-full p-2 border rounded"
-            value={formData.branch_name}
+            value={formData.branch_id}
             onChange={(e) =>
-              setFormData({ ...formData, branch_name: e.target.value })
+              setFormData({ ...formData, branch_id: e.target.value })
             }
           >
             <option value="">Select Branch</option>
             {filteredBranches.map((branch) => (
-              <option key={branch.branch_id} value={branch.branch_name}>
+              <option key={branch.branch_id} value={branch.branch_id}>
                 {branch.branch_name}
               </option>
             ))}
@@ -262,6 +281,47 @@ const Manager = () => {
             </button>
           </div>
         </form>
+      </DetailsModal>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      <DetailsModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirm Delete"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            To confirm deletion, please type <strong>NABIN</strong> below:
+          </p>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="Type DELETE to confirm"
+            className="w-full p-2 border rounded"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(false)}
+              className="px-4 py-2 bg-gray-200 rounded"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={confirmText !== "DELETE"}
+              className={`px-4 py-2 rounded ${
+                confirmText === "DELETE"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              Delete Manager
+            </button>
+          </div>
+        </div>
       </DetailsModal>
     </div>
   );
