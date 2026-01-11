@@ -4,6 +4,7 @@ export const profileApi = createApi({
   reducerPath: 'profileApi',
   baseQuery: fetchBaseQuery({
     baseUrl: '/api/profile',
+    credentials: 'include', // Include cookies
     prepareHeaders: (headers, { getState }) => {
       const token = getState().user.token;
       if (token) {

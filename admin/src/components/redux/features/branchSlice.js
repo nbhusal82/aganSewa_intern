@@ -56,6 +56,15 @@ export const branchApi = indexSlice.injectEndpoints({
       }),
       invalidatesTags: ["branch"],
     }),
+    
+    getPDB: builder.query({
+      query: (params) => ({
+        url: "/branch/pdb",
+        method: "GET",
+        params,
+      }),
+      providesTags: ["pdb"],
+    }),
   }),
 });
 export const {
@@ -67,4 +76,5 @@ export const {
   useGetBranchesQuery,
   useDeletebranchMutation,
   useUpdatebranchMutation,
+  useGetPDBQuery,
 } = branchApi;

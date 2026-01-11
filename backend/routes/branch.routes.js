@@ -13,6 +13,7 @@ import {
   updatebranch,
   GetProvienceById,
   GetDistrictById,
+  getPDB,
 } from "../controller/branch.js";
 
 import { islogin } from "../middlewares/islogin.js";
@@ -75,4 +76,7 @@ branch_router.delete(
   authorizeRoles("admin", "manager"),
   deletebranch
 );
+
+branch_router.get("/pdb", islogin, authorizeRoles("admin", "manager"), getPDB);
+
 export default branch_router;

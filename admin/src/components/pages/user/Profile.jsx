@@ -1,112 +1,33 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, User, Mail, Shield, Edit, Save, X } from "lucide-react";
+import { ArrowLeft, User, Mail, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import { toast } from "react-toastify";
+import { useSelector } from "react-redux";
 
 import { Loading } from "../../shared/Loading";
 import { Error } from "../../shared/Error";
-import DetailsModal from "../../shared/Model";
-import { useUpdateProfileMutation, useChangePasswordMutation } from "../../redux/features/profileSlice";
+import { useGetProfileQuery } from "../../redux/features/profileSlice";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
   
-  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
-  const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
+  const { data: profileData, isLoading: profileLoading, error: profileError } = useGetProfileQuery();
   
-  const [isEditing, setIsEditing] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-  });
-  
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  // Use profile data if available, otherwise fallback to user from state
+  const currentUser = profileData?.data || user;
 
-  // Update form data when user changes
+  // Retry loading profile if error
   useEffect(() => {
-    setFormData({
-      name: user?.name || "",
-      email: user?.email || "",
-    });
-  }, [user]);
-
-  const handleSave = async () => {
-    if (!formData.name.trim() || !formData.email.trim()) {
-      toast.error("Name and email are required");
-      return;
+    if (profileError && user) {
+      console.log('Profile load error, using user data:', user);
     }
+  }, [profileError, user]);
 
-    console.log('Attempting to save profile:', formData);
-    
-    try {
-      const result = await updateProfile({
-        name: formData.name,
-        email: formData.email
-      }).unwrap();
-      
-      console.log('Profile update success:', result);
-      toast.success("Profile updated successfully");
-      setIsEditing(false);
-    } catch (err) {
-      console.error('Profile update error:', err);
-      toast.error(err?.data?.message || err?.message || "Failed to update profile");
-    }
-  };
-
-  const handlePasswordChange = async () => {
-    if (!passwordData.currentPassword || !passwordData.newPassword) {
-      toast.error("All password fields are required");
-      return;
-    }
-
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-
-    if (passwordData.newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
-    console.log('Attempting to change password');
-    
-    try {
-      await changePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
-      }).unwrap();
-      
-      console.log('Password change success');
-      toast.success("Password changed successfully");
-      setShowPasswordModal(false);
-      setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-    } catch (err) {
-      console.error('Password change error:', err);
-      toast.error(err?.data?.message || err?.message || "Failed to change password");
-    }
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      name: user?.name || "",
-      email: user?.email || "",
-    });
-    setIsEditing(false);
-  };
+  // Show loading only if no user data available
+  if (profileLoading && !user) return <Loading />;
+  
+  // Show error only if no fallback data
+  if (profileError && !user) return <Error message="Failed to load profile" />;
 
   return (
     <div className="p-6">
@@ -122,30 +43,21 @@ const Profile = () => {
           </button>
           <h1 className="text-2xl font-bold ml-6">Admin Profile</h1>
         </div>
-
-        {!isEditing && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full"
-          >
-            <Edit size={18} /> Edit Profile
-          </button>
-        )}
       </div>
 
       {/* PROFILE CARD */}
       <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl">
         <div className="flex items-center gap-6 mb-8">
-          <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+          <div className="w-20 h-20 bg-linear-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
             <User size={40} className="text-white" />
           </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
-              {user?.name || "Admin User"}
+              {currentUser?.name || "Admin User"}
             </h2>
             <div className="flex items-center gap-2 text-gray-600">
               <Shield size={16} />
-              <span className="capitalize">{user?.role || "Administrator"}</span>
+              <span className="capitalize">{currentUser?.role || "Administrator"}</span>
             </div>
           </div>
         </div>
@@ -156,38 +68,20 @@ const Profile = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Full Name
             </label>
-            {isEditing ? (
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            ) : (
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <User size={18} className="text-gray-500" />
-                <span className="text-gray-800">{user?.name || "Not provided"}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <User size={18} className="text-gray-500" />
+              <span className="text-gray-800">{currentUser?.name || "Not provided"}</span>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email Address
             </label>
-            {isEditing ? (
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            ) : (
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Mail size={18} className="text-gray-500" />
-                <span className="text-gray-800">{user?.email || "Not provided"}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <Mail size={18} className="text-gray-500" />
+              <span className="text-gray-800">{currentUser?.email || "Not provided"}</span>
+            </div>
           </div>
 
           <div>
@@ -196,114 +90,11 @@ const Profile = () => {
             </label>
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <Shield size={18} className="text-gray-500" />
-              <span className="text-gray-800 capitalize">{user?.role || "Administrator"}</span>
+              <span className="text-gray-800 capitalize">{currentUser?.role || "Administrator"}</span>
             </div>
           </div>
         </div>
-
-        {/* ACTION BUTTONS */}
-        {isEditing ? (
-          <div className="flex justify-end gap-3 mt-8">
-            <button
-              onClick={handleCancel}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-            >
-              <X size={18} />
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isUpdating}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                isUpdating 
-                  ? "bg-gray-400 cursor-not-allowed" 
-                  : "bg-blue-600 hover:bg-blue-700"
-              } text-white`}
-            >
-              <Save size={18} />
-              {isUpdating ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
-        ) : (
-          <div className="flex justify-end mt-8">
-            <button
-              onClick={() => setShowPasswordModal(true)}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
-            >
-              Change Password
-            </button>
-          </div>
-        )}
       </div>
-
-      {/* PASSWORD CHANGE MODAL */}
-      <DetailsModal
-        show={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
-        title="Change Password"
-        size="md"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Current Password
-            </label>
-            <input
-              type="password"
-              value={passwordData.currentPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-              className="w-full p-2 border rounded"
-              placeholder="Enter current password"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              New Password
-            </label>
-            <input
-              type="password"
-              value={passwordData.newPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-              className="w-full p-2 border rounded"
-              placeholder="Enter new password"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm New Password
-            </label>
-            <input
-              type="password"
-              value={passwordData.confirmPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-              className="w-full p-2 border rounded"
-              placeholder="Confirm new password"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
-            <button
-              onClick={() => setShowPasswordModal(false)}
-              className="px-4 py-2 bg-gray-200 rounded"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handlePasswordChange}
-              disabled={isChangingPassword}
-              className={`px-4 py-2 rounded transition ${
-                isChangingPassword
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              } text-white`}
-            >
-              {isChangingPassword ? "Changing..." : "Change Password"}
-            </button>
-          </div>
-        </div>
-      </DetailsModal>
     </div>
   );
 };

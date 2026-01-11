@@ -17,6 +17,7 @@ import {
 import {
   useGetBranchesQuery,
   useGetProvienceQuery,
+  useGetPDBQuery,
 } from "../../redux/features/branchSlice";
 
 const Manager = () => {
@@ -31,18 +32,6 @@ const Manager = () => {
     province_id: "",
   };
 
-  const { data, isLoading, isError } = useGetmanagerQuery();
-  const { data: branchData } = useGetBranchesQuery();
-  const { data: districtData } = useGetdistrictQuery();
-  const { data: provinceData } = useGetProvienceQuery();
-  const [addManager] = useAddmanagerMutation();
-  const [deleteManager] = useDeletemanagerMutation();
-
-  const managers = data?.data || [];
-  const branches = branchData?.data || [];
-  const districts = districtData?.data || [];
-  const provinces = provinceData?.data || [];
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState(initialstate);
   const [filterProvince, setFilterProvince] = useState("");
@@ -50,26 +39,29 @@ const Manager = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Filter districts based on selected province in form
-  const filteredDistricts = formData.province_id
-    ? districts.filter((d) => d.province_id === parseInt(formData.province_id))
-    : districts;
+  const { data, isLoading, isError } = useGetmanagerQuery();
+  const { data: branchData } = useGetBranchesQuery();
+  const { data: districtData } = useGetPDBQuery(
+    { province_id: formData.province_id },
+    { skip: !formData.province_id }
+  );
+  const { data: branchFilteredData } = useGetPDBQuery(
+    { district_id: formData.district_id },
+    { skip: !formData.district_id }
+  );
+  const { data: provinceData } = useGetProvienceQuery();
+  const [addManager] = useAddmanagerMutation();
+  const [deleteManager] = useDeletemanagerMutation();
 
-  // Filter branches based on selected province in form
-  const filteredBranches = branches.filter((b) => {
-    if (formData.province_id && formData.district_id) {
-      return (
-        b.province_id === parseInt(formData.province_id) &&
-        b.district_id === parseInt(formData.district_id)
-      );
-    }
+  const managers = data?.data || [];
+  const branches = branchData?.data || [];
+  const districts = districtData?.data || [];
+  const filteredBranchesFromAPI = branchFilteredData?.data || [];
+  const provinces = provinceData?.data || [];
 
-    if (formData.province_id) {
-      return b.province_id === parseInt(formData.province_id);
-    }
-
-    return true;
-  });
+  // Use API filtered data
+  const filteredDistricts = districts;
+  const filteredBranches = filteredBranchesFromAPI;
 
   // Filter managers based on selected province filter
   const filteredManagers = filterProvince
@@ -194,26 +186,6 @@ const Manager = () => {
         size="md"
       >
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            placeholder="Name"
-            className="w-full p-2 border rounded"
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
-          <input
-            placeholder="Email"
-            className="w-full p-2 border rounded"
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full p-2 border rounded"
-            onChange={(e) =>
-              setFormData({ ...formData, password: e.target.value })
-            }
-          />
           <select
             className="w-full p-2 border rounded"
             value={formData.province_id}
@@ -267,6 +239,27 @@ const Manager = () => {
               </option>
             ))}
           </select>
+          
+          <input
+            placeholder="Name"
+            className="w-full p-2 border rounded"
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+          <input
+            placeholder="Email"
+            className="w-full p-2 border rounded"
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full p-2 border rounded"
+            onChange={(e) =>
+              setFormData({ ...formData, password: e.target.value })
+            }
+          />
 
           <div className="flex justify-end gap-2">
             <button

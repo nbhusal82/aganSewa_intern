@@ -296,4 +296,38 @@ export const updatebranch = async (req, res, next) => {
     next(error);
   }
 };
- 
+
+export const getPDB = async (req, res, next) => {
+  try {
+    const { province_id, district_id } = req.query;
+    
+    if (province_id) {
+      const [districts] = await db.query(
+        "SELECT district_id, district_name, province_id FROM district WHERE province_id = ?",
+        [province_id]
+      );
+      return res.status(200).json({
+        message: "Districts fetched successfully",
+        data: districts,
+      });
+    }
+    
+    if (district_id) {
+      const [branches] = await db.query(
+        `SELECT b.branch_id, b.branch_name, b.district_id, d.province_id 
+         FROM branch b 
+         LEFT JOIN district d ON b.district_id = d.district_id 
+         WHERE b.district_id = ?`,
+        [district_id]
+      );
+      return res.status(200).json({
+        message: "Branches fetched successfully",
+        data: branches,
+      });
+    }
+    
+    return Apperror(next, "Province ID or District ID required", 400);
+  } catch (error) {
+    next(error);
+  }
+};
