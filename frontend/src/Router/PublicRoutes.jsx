@@ -1,12 +1,15 @@
-const Home = () => {
-  <div>
-    <h1>Home page</h1>
-  </div>;
-};
+import Home from "../components/public/Home";
+import Login from "../components/shared/Login";
+
+
 
 export const publicRoutes = [
   {
-    path: "",
+    path: "/home",
     element: <Home />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
   },
 ];
