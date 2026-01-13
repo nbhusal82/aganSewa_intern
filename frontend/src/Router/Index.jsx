@@ -6,6 +6,7 @@ import PublicLayout from "../Layout/PublicLayout";
 import { Adminlayout } from "../Layout/Admin";
 import { adminRoutes } from "./AdminRoutes";
 import { publicRoutes } from "./PublicRoutes";
+import NOTFound from "../components/shared/NotFound";
 
 export const router = createBrowserRouter([
   {
@@ -22,8 +23,8 @@ export const router = createBrowserRouter([
   //   path: "/",
   //   element: <Login />,
   // },
-  // {
-  //   path: "*",
-  //   element: <NOTFound />,
-  // },
+  {
+    path: "*",
+    element: <NOTFound />,
+  },
 ]);

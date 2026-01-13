@@ -37,8 +37,7 @@ branch_router.get(
 branch_router.post("/add-dis", islogin, authorizeRoles("admin"), add_district);
 branch_router.get(
   "/get-dis",
-  islogin,
-  authorizeRoles("admin", "manager"),
+  
   get_district
 );
 
