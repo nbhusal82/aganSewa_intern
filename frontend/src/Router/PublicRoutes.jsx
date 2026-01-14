@@ -2,8 +2,6 @@ import Services from "../components/pages/BranchServices";
 import Home from "../components/public/Home";
 import Login from "../components/shared/Login";
 
-
-
 export const publicRoutes = [
   {
     path: "/",
@@ -14,7 +12,7 @@ export const publicRoutes = [
     element: <Login />,
   },
   {
-    path: "/:place",
+    path: "/services/:place",
     element: <Services />,
   },
 ];

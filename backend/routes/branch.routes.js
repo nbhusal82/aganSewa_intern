@@ -9,11 +9,11 @@ import {
   get_district,
   getbranch,
   getprovince,
- 
   updatebranch,
   GetProvienceById,
-  GetDistrictById,
   getPDB,
+  getalldistrict,
+  getBranchByDistrict,
 } from "../controller/branch.js";
 
 import { islogin } from "../middlewares/islogin.js";
@@ -37,8 +37,15 @@ branch_router.get(
 branch_router.post("/add-dis", islogin, authorizeRoles("admin"), add_district);
 branch_router.get(
   "/get-dis",
-  
+  islogin,
+  authorizeRoles("admin", "manager"),
+
   get_district
+);
+branch_router.get(
+  "/getalldistrict",
+
+  getalldistrict
 );
 
 branch_router.delete(
@@ -48,12 +55,7 @@ branch_router.delete(
 
   delete_district
 );
-branch_router.get(
-  "/getdistrictid/:id",
-  islogin,
-  authorizeRoles("admin"),
-  GetDistrictById
-);
+branch_router.get("/branchdistrict/:id", getBranchByDistrict);
 
 //branch
 branch_router.post("/addbranch", islogin, authorizeRoles("admin"), addbranch);

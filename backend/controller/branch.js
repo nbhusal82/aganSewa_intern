@@ -173,8 +173,21 @@ export const delete_district = async (req, res, next) => {
     next(error);
   }
 };
+export const getalldistrict = async(req,res,next)=>{
+  try {
+    const [alldistrict] = await db.query(
+      `SELECT district_name,district_id from district`
+    );
+    return res.status(200).json({
+      message: "available district..",
+      data: alldistrict,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
-export const GetDistrictById = async (req, res, next) => {
+export const getBranchByDistrict = async (req, res, next) => {
   try {
     const { id } = req.params;
     if (!id) {

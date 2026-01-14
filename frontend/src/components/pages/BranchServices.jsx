@@ -7,42 +7,18 @@ import {
   FaShieldAlt,
   FaTools,
 } from "react-icons/fa";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
+import { useGetservicebybranchQuery } from "../redux/features/DistrictSlices";
 
-const services = [
-  {
-    icon: <FaFireExtinguisher />,
-    title: "Fire Safety Inspection",
-    desc: "Complete fire risk assessment and safety compliance for homes and businesses.",
-  },
-  {
-    icon: <FaBolt />,
-    title: "Electrical Safety Audit",
-    desc: "Inspection of wiring, circuits, and load systems to prevent fire hazards.",
-  },
-  {
-    icon: <FaWater />,
-    title: "Hydrant & Plumbing System",
-    desc: "Installation and maintenance of fire hydrant and suppression water systems.",
-  },
-  {
-    icon: <FaIndustry />,
-    title: "Industrial Fire Protection",
-    desc: "Advanced fire safety solutions for factories and warehouses.",
-  },
-  {
-    icon: <FaShieldAlt />,
-    title: "Emergency Preparedness",
-    desc: "Fire drills, evacuation planning, and emergency response readiness.",
-  },
-  {
-    icon: <FaTools />,
-    title: "Equipment Installation",
-    desc: "Fire extinguishers, alarms, detectors, and safety equipment setup.",
-  },
-];
+const services = [];
 
-const  Services = () => {
+const Services = () => {
+  const { state } = useLocation();
+  const id = state?.branchID;
+  const { data } = useGetservicebybranchQuery(id);
+
+  console.log(data);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 🔥 HERO */}

@@ -7,7 +7,10 @@ import { FaArrowRight, FaPhoneAlt } from "react-icons/fa";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-fade";
-import { useGetdistrictQuery } from "../redux/features/DistrictSlices";
+import {
+  useGetbranchbydistrictQuery,
+  useGetdistrictQuery,
+} from "../redux/features/DistrictSlices";
 import { Loading } from "../shared/Loading";
 import { Error } from "../shared/Error";
 
@@ -16,20 +19,32 @@ const Home = () => {
   const [selectedPlace, setSelectedPlace] = useState("");
   const navigate = useNavigate();
   const { data: districtData, isLoading, isError } = useGetdistrictQuery();
-  const districts = [{ value: "kathmandu", label: "kathmandu" }];
-  console.log(districtData);
+  const { data: branchdata } = useGetbranchbydistrictQuery(selectedDistrict, {
+    skip: !selectedDistrict,
+  });
 
-  const availablePlaces = selectedDistrict
-    ? placesByDistrict[selectedDistrict] || []
-    : [];
-  const palceByDistrict = {
-    kathmandu: [{ id: 1, value: "thamel", label: "thamel" }],
-  };
+
+  const districts =
+    districtData?.data?.map((d) => ({
+      value: d.district_id,
+      label: d.district_name,
+    })) || [];
+  const availablePlaces =
+    branchdata?.data?.map((b) => ({
+      id: b.branch_id,
+      value: b.branch_id,
+      label: b.branch_name,
+      branch_name: b.branch_name,
+    })) || [];
+
   const handelChange = (e) => {
     const place = e.target.value;
+    const branch = availablePlaces.find((p) => p.id === Number(place));
     setSelectedPlace(place);
-    if (place) {
-      navigate(`/${place}`);
+    if (branch) {
+      navigate(`/services/${branch.branch_name}`, {
+        state: { branchID: branch.id },
+      });
     }
   };
 

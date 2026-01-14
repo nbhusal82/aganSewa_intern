@@ -9,7 +9,7 @@ import {
 import { uploadservice } from "../utlis/multer.js";
 import { islogin } from "../middlewares/islogin.js";
 import { authorizeRoles } from "../middlewares/authorizeRoles.js";
-import { branchAccess} from "../middlewares/branchAccess.js";
+import { branchAccess } from "../middlewares/branchAccess.js";
 
 const service_Router = express.Router();
 service_Router.post(
@@ -18,14 +18,14 @@ service_Router.post(
 
   authorizeRoles("manager", "admin"),
   uploadservice.single("image"),
- branchAccess,
+  branchAccess,
   addservices
 );
 service_Router.get(
   "/get",
   islogin,
   authorizeRoles("manager", "admin"),
-  
+
   AllService
 );
 service_Router.delete(
@@ -44,6 +44,6 @@ service_Router.patch(
   updateService
 );
 
-service_Router.get("/public", getservice);
+service_Router.get("/publicservice/:branch_id", getservice);
 
 export default service_Router;
