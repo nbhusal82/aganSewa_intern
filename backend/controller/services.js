@@ -146,27 +146,20 @@ export const updateService = async (req, res, next) => {
 };
 
 export const getservice = async (req, res, next) => {
-  const { province_id, district_id, branch_id } = req.query;
-  console.log(req.query);
+  const { branch_id } = req.params;
 
   try {
-    let query = "";
-    let params = [];
-    if (province_id && !district_id && !branch_id) {
-      query = "SELECT * FROM district where province_id = ?";
-      params = [province_id];
-    } else if (province_id && district_id && !branch_id) {
-      query = "SELECT * FROM branch where district_id=?";
-      params = [district_id];
-    } else if (province_id && district_id && branch_id) {
-      query = "SELECT * FROM services where branch_id=?";
-      params = [branch_id];
-    } else {
-      query = "SELECT * From services ";
+    if (!branch_id) {
+      return Apperror(next, "Branch ID is required", 400);
     }
-    const [result] = await db.query(query, params);
+
+    const [result] = await db.query(
+      "SELECT * FROM services WHERE branch_id=?",
+      [branch_id]
+    );
+
     res.status(200).json({
-      message: "Data fatch",
+      message: "Services fetched successfully",
       data: result,
     });
   } catch (error) {
