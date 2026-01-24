@@ -151,7 +151,6 @@ const Services = () => {
                     </div>
                   </div>
 
-                  {/* Content Area */}
                   <div className="p-6 flex flex-col grow">
                     <div className="flex justify-between items-start mb-3">
                       <h2 className="text-2xl font-bold text-slate-800 group-hover:text-orange-600 transition-colors">
@@ -198,7 +197,7 @@ const Services = () => {
         )}
       </div>
 
-      {/* 📞 EMERGENCY CTA */}
+      
       <div className="max-w-7xl mx-auto px-6 pb-20 text-center">
         <div className="bg-orange-500 rounded-[3rem] p-10 md:p-16 text-white shadow-2xl">
           <h2 className="text-4xl font-black mb-4">
