@@ -12,7 +12,7 @@ export const addprovince = async (req, res, next) => {
     // check if province already exists
     const [checkProvince] = await db.query(
       "SELECT * FROM province WHERE province_name = ?",
-      [province_name]
+      [province_name],
     );
 
     if (checkProvince.length > 0) {
@@ -34,7 +34,7 @@ export const getprovince = async (req, res, next) => {
   try {
     const [allprovince] = await db.query(
       `SELECT p.province_id,p.province_name ,
-      GROUP_CONCAT(d.district_name) as district from province p LEFT JOIN district d ON p.province_id = d.province_id   GROUP BY p.province_id,p.province_name`
+      GROUP_CONCAT(d.district_name) as district from province p LEFT JOIN district d ON p.province_id = d.province_id   GROUP BY p.province_id,p.province_name`,
     );
     return res.status(200).json({
       message: "All province..",
@@ -51,14 +51,14 @@ export const deleteprovince = async (req, res, next) => {
 
     const [check] = await db.query(
       "SELECT * FROM province WHERE province_id = ?",
-      [id]
+      [id],
     );
     if (check.length === 0) {
       return Apperror(next, "Province not found", 400);
     }
     const [district] = await db.query(
       "SELECT * FROM district WHERE province_id = ?",
-      [id]
+      [id],
     );
     if (district.length > 0) {
       return Apperror(next, "Province has district Cannot Delete..", 400);
@@ -81,7 +81,7 @@ export const GetProvienceById = async (req, res, next) => {
     }
     const [provience] = await db.query(
       "SELECT district_name,district_id from district  WHERE province_id=?",
-      [id]
+      [id],
     );
     return res.status(200).json({
       message: "Provience district  fetched successfully",
@@ -102,7 +102,7 @@ export const add_district = async (req, res, next) => {
     }
     const [province] = await db.query(
       "SELECT * FROM province WHERE province_id = ?",
-      [province_id]
+      [province_id],
     );
     if (province.length === 0) {
       return Apperror(next, "Province  is not found", 400);
@@ -111,7 +111,7 @@ export const add_district = async (req, res, next) => {
     // check if district already exists
     const [checkDistrict] = await db.query(
       "SELECT * FROM district WHERE district_name = ? ",
-      [district_name]
+      [district_name],
     );
 
     if (checkDistrict.length > 0) {
@@ -121,7 +121,7 @@ export const add_district = async (req, res, next) => {
     // insert new district
     await db.query(
       "INSERT INTO district (district_name, province_id) VALUES (?, ?)",
-      [district_name, province_id]
+      [district_name, province_id],
     );
 
     return res.status(201).json({ message: "District added successfully" });
@@ -135,7 +135,7 @@ export const get_district = async (req, res, next) => {
     const [alldistrict] = await db.query(
       `SELECT d.district_id, d.district_name, d.province_id, p.province_name 
        FROM district d 
-       LEFT JOIN province p ON d.province_id = p.province_id`
+       LEFT JOIN province p ON d.province_id = p.province_id`,
     );
     return res.status(201).json({
       message: "available district..",
@@ -160,7 +160,7 @@ export const delete_district = async (req, res, next) => {
     }
     const [branch] = await db.query(
       "SELECT * FROM branch WHERE district_id = ?",
-      [id]
+      [id],
     );
     if (branch.length > 0) {
       return Apperror(next, "District has Branch Cannot Delete..", 400);
@@ -173,10 +173,10 @@ export const delete_district = async (req, res, next) => {
     next(error);
   }
 };
-export const getalldistrict = async(req,res,next)=>{
+export const getalldistrict = async (req, res, next) => {
   try {
     const [alldistrict] = await db.query(
-      `SELECT district_name,district_id from district`
+      `SELECT district_name,district_id from district`,
     );
     return res.status(200).json({
       message: "available district..",
@@ -185,7 +185,7 @@ export const getalldistrict = async(req,res,next)=>{
   } catch (error) {
     next(error);
   }
-}
+};
 
 export const getBranchByDistrict = async (req, res, next) => {
   try {
@@ -195,7 +195,7 @@ export const getBranchByDistrict = async (req, res, next) => {
     }
     const [district] = await db.query(
       "SELECT branch_name,branch_id from branch WHERE district_id=?",
-      [id]
+      [id],
     );
     return res.status(200).json({
       message: "District fetched successfully",
@@ -216,14 +216,14 @@ export const addbranch = async (req, res, next) => {
     }
     const [rows] = await db.query(
       "SELECT * FROM district WHERE district_id=?",
-      [district_id]
+      [district_id],
     );
     if (rows.length === 0) {
       return Apperror(next, "district not found", 400);
     }
     await db.query(
       "INSERT INTO branch (branch_name,district_id,Remark)values(? ,? ,?)",
-      [branch_name, district_id, Remark]
+      [branch_name, district_id, Remark],
     );
     return res.status(201).json({
       message: "Branch add Successfully",
@@ -265,7 +265,7 @@ export const deletebranch = async (req, res, next) => {
 
     const [checks] = await db.query(
       "SELECT branch_id FROM branch WHERE branch_id = ?",
-      [branch_id]
+      [branch_id],
     );
 
     if (checks.length === 0) {
@@ -300,7 +300,7 @@ export const updatebranch = async (req, res, next) => {
 
     await db.query(
       "UPDATE branch SET branch_name = ?, district_id = ?, Remark = ? WHERE branch_id = ?",
-      [branch_name, district_id, Remark, branch_id]
+      [branch_name, district_id, Remark, branch_id],
     );
     return res.status(200).json({
       message: "Branch updated successfully",
@@ -313,32 +313,32 @@ export const updatebranch = async (req, res, next) => {
 export const getPDB = async (req, res, next) => {
   try {
     const { province_id, district_id } = req.query;
-    
+
     if (province_id) {
       const [districts] = await db.query(
         "SELECT district_id, district_name, province_id FROM district WHERE province_id = ?",
-        [province_id]
+        [province_id],
       );
       return res.status(200).json({
         message: "Districts fetched successfully",
         data: districts,
       });
     }
-    
+
     if (district_id) {
       const [branches] = await db.query(
         `SELECT b.branch_id, b.branch_name, b.district_id, d.province_id 
          FROM branch b 
          LEFT JOIN district d ON b.district_id = d.district_id 
          WHERE b.district_id = ?`,
-        [district_id]
+        [district_id],
       );
       return res.status(200).json({
         message: "Branches fetched successfully",
         data: branches,
       });
     }
-    
+
     return Apperror(next, "Province ID or District ID required", 400);
   } catch (error) {
     next(error);

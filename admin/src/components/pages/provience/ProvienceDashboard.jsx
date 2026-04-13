@@ -1,21 +1,19 @@
 import { useState } from "react";
-import { Plus, Trash2, Eye } from "lucide-react";
+import { ArrowLeft, Eye, Plus, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
-
-import { Loading } from "../../shared/Loading";
-import { Error } from "../../shared/Error";
-import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useSelector } from "react-redux";
 
+import { Error } from "../../shared/Error";
+import DetailsModal from "../../shared/Model";
+import { Button } from "../../shared/Button";
+import { Table } from "../../shared/Table";
 import {
   useAddProvienceMutation,
   useDeleteprovienceMutation,
   useGetProvienceQuery,
 } from "../../redux/features/branchSlice";
-
 import { useGetdistrictQuery } from "../../redux/features/districtslice";
-import DetailsModal from "../../shared/Model";
 
 const Province = () => {
   const { role } = useSelector((state) => state.user);
@@ -26,8 +24,9 @@ const Province = () => {
   const { data, isLoading, isError } = useGetProvienceQuery();
   const { data: districtData } = useGetdistrictQuery();
 
-  const [addProvience] = useAddProvienceMutation();
-  const [deleteProvience] = useDeleteprovienceMutation();
+  const [addProvience, { isLoading: isSaving }] = useAddProvienceMutation();
+  const [deleteProvience, { isLoading: isDeleting }] =
+    useDeleteprovienceMutation();
 
   const provinces = data?.data || [];
   const allDistricts = districtData?.data || [];
@@ -37,9 +36,6 @@ const Province = () => {
   const [confirmText, setConfirmText] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  // 🔥 NEW
-  const [selectedProvinceId, setSelectedProvinceId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState(null);
 
@@ -54,7 +50,6 @@ const Province = () => {
     try {
       await addProvience({ province_name: formData.name }).unwrap();
       toast.success("Province added successfully");
-
       setFormData(initialData);
       setIsModalOpen(false);
     } catch (err) {
@@ -62,17 +57,12 @@ const Province = () => {
     }
   };
 
-  /* ================= VIEW ================= */
   const handleView = (provinceId) => {
-    console.log("Province ID:", provinceId);
-    console.log("All provinces:", provinces);
-    const province = provinces.find((p) => p.province_id === provinceId);
-    console.log("Found province:", province);
-    setSelectedProvince(province);
+    const province = provinces.find((item) => item.province_id === provinceId);
+    setSelectedProvince(province || null);
     setShowModal(true);
   };
 
-  /* ================= DELETE ================= */
   const handleDelete = async () => {
     try {
       await deleteProvience(deleteId).unwrap();
@@ -85,89 +75,77 @@ const Province = () => {
     }
   };
 
-  if (isLoading) return <Loading isLoading={isLoading} />;
   if (isError) return <Error />;
 
   return (
     <div className="p-6">
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button
+          <Button
             onClick={() => navigate("/admin/dashboard")}
-            className="flex items-center gap-2 px-3 py-2 bg-teal-600 text-white rounded-lg"
+            variant="teal"
+            icon={ArrowLeft}
           >
-            <ArrowLeft size={18} />
             Back
-          </button>
+          </Button>
           <h1 className="text-2xl font-bold">Provinces</h1>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-amber-700 text-white px-4 py-2 rounded-full"
-        >
-          <Plus size={18} /> Add Province
-        </button>
+        {role === "admin" && (
+          <Button onClick={() => setIsModalOpen(true)}>Add Province</Button>
+        )}
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-purple-100">
-            <tr>
-              <th className="px-6 py-3">ID</th>
-              <th className="px-6 py-3">Name</th>
-              <th className="px-6 py-3">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody className="divide-y">
-            {provinces.map((province) => {
-              const filteredDistricts = allDistricts.filter(
-                (d) => d.province_id === province.province_id
-              );
-
-              return (
-                <>
-                  <tr key={province.province_id}>
-                    <td className="px-6 py-4">{province.province_id}</td>
-                    <td className="px-6 py-4 font-medium">
-                      {province.province_name}
-                    </td>
-
-                    <td className="px-6 py-4 flex gap-2">
-                      <button
+      <Table
+        columns={[
+          { key: "id", header: "ID" },
+          { key: "name", header: "Name" },
+          { key: "actions", header: "Actions" },
+        ]}
+        data={provinces}
+        renderRow={
+          isLoading
+            ? null
+            : (province) => (
+                <tr key={province.province_id} className="odd:bg-gray-50">
+                  <td className="border-r border-gray-200 px-4 py-3">
+                    {province.province_id}
+                  </td>
+                  <td className="border-r border-gray-200 px-4 py-3 font-medium text-slate-900">
+                    {province.province_name}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <Button
                         onClick={() => handleView(province.province_id)}
-                        className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-full"
+                        size="sm"
+                        icon={Eye}
                       >
-                        <Eye size={14} /> View
-                      </button>
-
-                      <button
+                        View
+                      </Button>
+                      <Button
                         onClick={() => {
                           setDeleteId(province.province_id);
                           setConfirmText("");
                           setShowDeleteModal(true);
                         }}
-                        className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-full"
+                        size="sm"
+                        variant="danger"
+                        icon={Trash2}
                       >
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </td>
-                  </tr>
-                </>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                        Delete
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )
+        }
+      />
 
-      {/* MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center">
-          <div className="bg-white w-96 p-6 rounded-xl">
-            <h2 className="text-xl font-bold mb-4">Add Province</h2>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60">
+          <div className="w-96 rounded-xl bg-white p-6">
+            <h2 className="mb-4 text-xl font-bold">Add Province</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
@@ -175,36 +153,33 @@ const Province = () => {
                 placeholder="Province Name"
                 value={formData.name}
                 onChange={(e) => setFormData({ name: e.target.value })}
-                className="w-full p-2 border rounded-lg"
+                className="w-full rounded-lg border p-2"
               />
 
               <div className="flex justify-end gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-200 rounded-lg"
+                  variant="muted"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                  loading={isSaving}
+                  loadingText="Saving..."
                 >
                   Add
-                </button>
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* DISTRICTS MODAL */}
       <DetailsModal
         show={showModal}
-        onClose={() => {
-          console.log("Closing modal");
-          setShowModal(false);
-        }}
+        onClose={() => setShowModal(false)}
         title={
           selectedProvince
             ? `Districts in ${selectedProvince.province_name}`
@@ -215,16 +190,20 @@ const Province = () => {
         <div className="space-y-3">
           {selectedProvince ? (
             allDistricts.filter(
-              (d) => d.province_id === selectedProvince.province_id
+              (district) =>
+                district.province_id === selectedProvince.province_id,
             ).length > 0 ? (
               allDistricts
-                .filter((d) => d.province_id === selectedProvince.province_id)
+                .filter(
+                  (district) =>
+                    district.province_id === selectedProvince.province_id,
+                )
                 .map((district) => (
                   <div
                     key={district.district_id}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
+                    className="flex items-center gap-3 rounded-lg border bg-gray-50 p-3"
                   >
-                    <span className="text-sm text-gray-600 font-mono">
+                    <span className="font-mono text-sm text-gray-600">
                       #{district.district_id}
                     </span>
                     <span className="font-medium text-gray-800">
@@ -233,17 +212,16 @@ const Province = () => {
                   </div>
                 ))
             ) : (
-              <p className="text-gray-500 italic text-center py-4">
+              <p className="py-4 text-center italic text-gray-500">
                 No districts found in this province
               </p>
             )
           ) : (
-            <p className="text-gray-500 italic text-center py-4">Loading...</p>
+            <p className="py-4 text-center italic text-gray-500">Loading...</p>
           )}
         </div>
       </DetailsModal>
 
-      {/* DELETE CONFIRMATION MODAL */}
       <DetailsModal
         show={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -252,34 +230,32 @@ const Province = () => {
       >
         <div className="space-y-4">
           <p className="text-gray-600">
-            To confirm deletion, please type <strong>NABIN</strong> below:
+            To confirm deletion, please type <strong>DELETE</strong> below:
           </p>
           <input
             type="text"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder="Type DELETE to confirm"
-            className="w-full p-2 border rounded"
+            className="w-full rounded border p-2"
           />
           <div className="flex justify-end gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => setShowDeleteModal(false)}
-              className="px-4 py-2 bg-gray-200 rounded"
+              variant="muted"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleDelete}
+              loading={isDeleting}
+              loadingText="Deleting..."
               disabled={confirmText !== "DELETE"}
-              className={`px-4 py-2 rounded ${
-                confirmText === "DELETE"
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              variant={confirmText === "DELETE" ? "danger" : "muted"}
             >
               Delete Province
-            </button>
+            </Button>
           </div>
         </div>
       </DetailsModal>

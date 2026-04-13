@@ -13,6 +13,7 @@ import { useDispatch } from "react-redux";
 import { useLogoutMutation } from "./redux/features/authSlice";
 
 import { toast } from "react-toastify";
+import { Button } from "./shared/Button";
 
 const Sidebar = () => {
   const menu = [
@@ -27,7 +28,7 @@ const Sidebar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [logoutMutation] = useLogoutMutation();
+  const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   const handlelogout = async () => {
     try {
@@ -67,15 +68,17 @@ const Sidebar = () => {
         })}
       </nav>
 
-      {/* Logout */}
       <div className="p-4 border-t border-slate-700">
-        <button
+        <Button
           onClick={handlelogout}
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-lg hover:bg-red-600 transition"
+          variant="danger"
+          icon={LogOut}
+          loading={isLoggingOut}
+          loadingText="Logging out..."
+          className="w-full justify-start border-none"
         >
-          <LogOut size={20} />
           Logout
-        </button>
+        </Button>
       </div>
     </aside>
   );

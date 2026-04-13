@@ -1,29 +1,29 @@
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
-import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-import { Loading } from "../../shared/Loading";
 import { Error } from "../../shared/Error";
 import DetailsModal from "../../shared/Model";
+import { Button } from "../../shared/Button";
+import { Table } from "../../shared/Table";
 import {
   useAddmanagerMutation,
   useDeletemanagerMutation,
-  useGetdistrictQuery,
   useGetmanagerQuery,
+  useUpdatemanagerMutation,
 } from "../../redux/features/districtslice";
 import {
   useGetBranchesQuery,
-  useGetProvienceQuery,
   useGetPDBQuery,
+  useGetProvienceQuery,
 } from "../../redux/features/branchSlice";
 
 const Manager = () => {
   const navigate = useNavigate();
   const { role } = useSelector((state) => state.user);
-  const initialstate = {
+  const initialState = {
     name: "",
     email: "",
     password: "",
@@ -33,25 +33,32 @@ const Manager = () => {
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState(initialstate);
-  const [filterProvince, setFilterProvince] = useState("");
+  const [formData, setFormData] = useState(initialState);
+  const filterProvince = "";
   const [confirmText, setConfirmText] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editData, setEditData] = useState({ name: "", email: "" });
 
   const { data, isLoading, isError } = useGetmanagerQuery();
   const { data: branchData } = useGetBranchesQuery();
   const { data: districtData } = useGetPDBQuery(
     { province_id: formData.province_id },
-    { skip: !formData.province_id }
+    { skip: !formData.province_id },
   );
   const { data: branchFilteredData } = useGetPDBQuery(
     { district_id: formData.district_id },
-    { skip: !formData.district_id }
+    { skip: !formData.district_id },
   );
   const { data: provinceData } = useGetProvienceQuery();
-  const [addManager] = useAddmanagerMutation();
-  const [deleteManager] = useDeletemanagerMutation();
+
+  const [addManager, { isLoading: isSaving }] = useAddmanagerMutation();
+  const [deleteManager, { isLoading: isDeleting }] =
+    useDeletemanagerMutation();
+  const [updateManager, { isLoading: isUpdating }] =
+    useUpdatemanagerMutation();
 
   const managers = data?.data || [];
   const branches = branchData?.data || [];
@@ -59,14 +66,9 @@ const Manager = () => {
   const filteredBranchesFromAPI = branchFilteredData?.data || [];
   const provinces = provinceData?.data || [];
 
-  // Use API filtered data
-  const filteredDistricts = districts;
-  const filteredBranches = filteredBranchesFromAPI;
-
-  // Filter managers based on selected province filter
   const filteredManagers = filterProvince
-    ? managers.filter((m) => {
-        const branch = branches.find((b) => b.branch_id === m.branch_id);
+    ? managers.filter((manager) => {
+        const branch = branches.find((item) => item.branch_id === manager.branch_id);
         return branch?.province_id === parseInt(filterProvince);
       })
     : managers;
@@ -78,7 +80,7 @@ const Manager = () => {
       await addManager(formData).unwrap();
       toast.success("Branch manager added successfully");
       setIsModalOpen(false);
-      setFormData(initialstate);
+      setFormData(initialState);
     } catch (err) {
       toast.error(err?.data?.message || "Failed to add manager");
     }
@@ -96,89 +98,98 @@ const Manager = () => {
     }
   };
 
-  if (isLoading) return <Loading isLoading />;
+  const handleEdit = (manager) => {
+    setEditId(manager.user_id);
+    setEditData({ name: manager.name, email: manager.email });
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      await updateManager({ id: editId, ...editData }).unwrap();
+      toast.success("Manager updated successfully");
+      setShowEditModal(false);
+    } catch (err) {
+      toast.error(err?.data?.message || "Update failed");
+    }
+  };
+
   if (isError) return <Error />;
 
   return (
     <div className="p-6">
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/admin/dashboard")}
-            className="flex items-center gap-2 px-3 py-2 bg-teal-600 text-white rounded-lg"
-          >
-            <ArrowLeft size={18} /> Back
-          </button>
-
+          <Button onClick={() => navigate("/admin/dashboard")} variant="teal" icon={ArrowLeft}>
+            Back
+          </Button>
           <h1 className="text-2xl font-bold">Branch Managers</h1>
         </div>
 
         {role === "admin" && (
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-amber-700 text-white px-4 py-2 rounded-full"
-          >
-            <Plus size={18} /> Add Manager
-          </button>
+          <Button onClick={() => setIsModalOpen(true)} >
+            Add Manager
+          </Button>
         )}
       </div>
 
-     
+      <Table
+        columns={[
+          { key: "name", header: "Name" },
+          { key: "email", header: "Email" },
+          { key: "branch", header: "Branch Name" },
+          { key: "actions", header: "Actions" },
+        ]}
+        data={filteredManagers}
+        renderRow={
+          isLoading
+            ? null
+            : (manager) => {
+                const branch = branches.find(
+                  (item) => item.branch_id === manager.branch_id
+                );
 
-      {/* TABLE */}
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-indigo-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-semibold">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold">
-                Branch Name
-              </th>
-              
-              <th className="px-6 py-3 text-left text-xs font-semibold">
-                Action
-              </th>
-            </tr>
-          </thead>
+                return (
+                  <tr key={manager.user_id} className="odd:bg-gray-50">
+                    <td className="border-r border-gray-200 px-4 py-3 font-medium text-slate-900">
+                      {manager.name}
+                    </td>
+                    <td className="border-r border-gray-200 px-4 py-3 text-slate-700">
+                      {manager.email}
+                    </td>
+                    <td className="border-r border-gray-200 px-4 py-3 text-slate-700">
+                      {branch?.branch_name || manager.branch_name || "N/A"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => handleEdit(manager)}
+                          size="sm"
+                          icon={Pencil}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setDeleteId(manager.user_id);
+                            setConfirmText("");
+                            setShowDeleteModal(true);
+                          }}
+                          size="sm"
+                          variant="danger"
+                          icon={Trash2}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              }
+        }
+      />
 
-          <tbody className="divide-y">
-            {filteredManagers.map((m) => {
-              const branch = branches.find((b) => b.branch_id === m.branch_id);
-
-              return (
-                <tr key={m.user_id}>
-                  <td className="px-6 py-4">{m.name}</td>
-                  <td className="px-6 py-4">{m.email}</td>
-                  <td className="px-6 py-4">
-                    {branch?.branch_name || m.branch_name || "N/A"}
-                  </td>
-                  
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => {
-                        setDeleteId(m.user_id);
-                        setConfirmText("");
-                        setShowDeleteModal(true);
-                      }}
-                      className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-full"
-                    >
-                      <Trash2 size={14} /> Delete
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* ADD MANAGER MODAL */}
       <DetailsModal
         show={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -187,7 +198,7 @@ const Manager = () => {
       >
         <form onSubmit={handleSubmit} className="space-y-3">
           <select
-            className="w-full p-2 border rounded"
+            className="w-full rounded border p-2"
             value={formData.province_id}
             onChange={(e) =>
               setFormData({
@@ -199,15 +210,15 @@ const Manager = () => {
             }
           >
             <option value="">Select Province</option>
-            {provinces.map((p) => (
-              <option key={p.province_id} value={p.province_id}>
-                {p.province_name}
+            {provinces.map((province) => (
+              <option key={province.province_id} value={province.province_id}>
+                {province.province_name}
               </option>
             ))}
           </select>
 
           <select
-            className="w-full p-2 border rounded"
+            className="w-full rounded border p-2"
             value={formData.district_id}
             onChange={(e) =>
               setFormData({
@@ -218,7 +229,7 @@ const Manager = () => {
             }
           >
             <option value="">Select District</option>
-            {filteredDistricts.map((district) => (
+            {districts.map((district) => (
               <option key={district.district_id} value={district.district_id}>
                 {district.district_name}
               </option>
@@ -226,57 +237,100 @@ const Manager = () => {
           </select>
 
           <select
-            className="w-full p-2 border rounded"
+            className="w-full rounded border p-2"
             value={formData.branch_id}
             onChange={(e) =>
               setFormData({ ...formData, branch_id: e.target.value })
             }
           >
             <option value="">Select Branch</option>
-            {filteredBranches.map((branch) => (
+            {filteredBranchesFromAPI.map((branch) => (
               <option key={branch.branch_id} value={branch.branch_id}>
                 {branch.branch_name}
               </option>
             ))}
           </select>
-          
+
           <input
             placeholder="Name"
-            className="w-full p-2 border rounded"
+            value={formData.name}
+            className="w-full rounded border p-2"
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
+
           <input
             placeholder="Email"
-            className="w-full p-2 border rounded"
+            value={formData.email}
+            className="w-full rounded border p-2"
             onChange={(e) =>
               setFormData({ ...formData, email: e.target.value })
             }
           />
+
           <input
             type="password"
             placeholder="Password"
-            className="w-full p-2 border rounded"
+            value={formData.password}
+            className="w-full rounded border p-2"
             onChange={(e) =>
               setFormData({ ...formData, password: e.target.value })
             }
           />
 
           <div className="flex justify-end gap-2">
-            <button
+            <Button
               type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2 bg-gray-200 rounded"
+              onClick={() => {
+                setIsModalOpen(false);
+                setFormData(initialState);
+              }}
+              variant="muted"
             >
               Cancel
-            </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded">
+            </Button>
+            <Button type="submit" loading={isSaving} loadingText="Saving...">
               Add
-            </button>
+            </Button>
           </div>
         </form>
       </DetailsModal>
 
-      {/* DELETE CONFIRMATION MODAL */}
+      <DetailsModal
+        show={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edit Manager"
+        size="md"
+      >
+        <form onSubmit={handleUpdate} className="space-y-3">
+          <input
+            placeholder="Name"
+            value={editData.name}
+            className="w-full rounded border p-2"
+            onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+          />
+          <input
+            placeholder="Email"
+            value={editData.email}
+            className="w-full rounded border p-2"
+            onChange={(e) =>
+              setEditData({ ...editData, email: e.target.value })
+            }
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              onClick={() => setShowEditModal(false)}
+              variant="muted"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" loading={isUpdating} loadingText="Updating...">
+              Update
+            </Button>
+          </div>
+        </form>
+      </DetailsModal>
+
       <DetailsModal
         show={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -285,34 +339,32 @@ const Manager = () => {
       >
         <div className="space-y-4">
           <p className="text-gray-600">
-            To confirm deletion, please type <strong>NABIN</strong> below:
+            To confirm deletion, please type <strong>DELETE</strong> below:
           </p>
           <input
             type="text"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder="Type DELETE to confirm"
-            className="w-full p-2 border rounded"
+            className="w-full rounded border p-2"
           />
           <div className="flex justify-end gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => setShowDeleteModal(false)}
-              className="px-4 py-2 bg-gray-200 rounded"
+              variant="muted"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleDelete}
+              loading={isDeleting}
+              loadingText="Deleting..."
               disabled={confirmText !== "DELETE"}
-              className={`px-4 py-2 rounded ${
-                confirmText === "DELETE"
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              variant={confirmText === "DELETE" ? "danger" : "muted"}
             >
               Delete Manager
-            </button>
+            </Button>
           </div>
         </div>
       </DetailsModal>

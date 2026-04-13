@@ -98,7 +98,7 @@ export const signout = async (req, res, next) => {
 export const addbranchmanager = async (req, res, next) => {
   try {
     const { name, email, password, branch_id } = req.body;
-    if (!name || !email || !password ) {
+    if (!name || !email || !password || !branch_id) {
       return Apperror(next, "All Filed are Required", 400);
     }
     const [check_branch] = await db.query(
@@ -114,15 +114,17 @@ export const addbranchmanager = async (req, res, next) => {
     if (check_mail.length > 0) {
       return Apperror(next, "Email already exists", 400);
     }
-    const [rows] = await db.query("SELECT * FROM USERS WHERE   branch_id=?", [
-      branch_id,
-    ]);
-    if (rows.length > 0) {
-      return Apperror(
-        next,
-        "Branch manager already exists for this branch",
-        400
-      );
+    if (branch_id) {
+      const [rows] = await db.query("SELECT * FROM users WHERE branch_id=? AND role='manager'", [
+        branch_id,
+      ]);
+      if (rows.length > 0) {
+        return Apperror(
+          next,
+          "Branch manager already exists for this branch",
+          400
+        );
+      }
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     await db.query(

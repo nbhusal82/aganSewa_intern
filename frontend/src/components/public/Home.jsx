@@ -23,7 +23,6 @@ const Home = () => {
     skip: !selectedDistrict,
   });
 
-
   const districts =
     districtData?.data?.map((d) => ({
       value: d.district_id,
@@ -72,8 +71,6 @@ const Home = () => {
   ];
 
   const showSlider = !selectedDistrict;
-  if (isLoading) return <Loading isLoading={isLoading} />;
-  if (isError) return <Error />;
 
   return (
     <div className="font-sans text-slate-900">

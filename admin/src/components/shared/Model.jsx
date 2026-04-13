@@ -1,4 +1,5 @@
 import { FaTimes } from "react-icons/fa";
+import { Button } from "./Button";
 
 const DetailsModal = ({
   show = false,
@@ -47,12 +48,15 @@ const DetailsModal = ({
                   <div className="w-12 h-0.5 bg-red-500 mt-1 rounded-full"></div>
                 </div>
               </div>
-              <button
+              <Button
                 onClick={onClose}
-                className="group p-3  rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                variant="secondary"
+                icon={FaTimes}
+                iconOnly
+                className="border-none"
               >
-                <FaTimes className="h-5 w-5 text-red-400 group-hover:text-red-600 transition-all duration-500 transform hover:rotate-360" />
-              </button>
+                Close
+              </Button>
             </div>
           </div>
 

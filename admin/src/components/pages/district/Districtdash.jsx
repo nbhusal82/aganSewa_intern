@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Trash2, Eye } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Eye, Plus, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
-import { Loading } from "../../shared/Loading";
+import { useNavigate } from "react-router-dom";
+
 import { Error } from "../../shared/Error";
 import DetailsModal from "../../shared/Model";
-
+import { Button } from "../../shared/Button";
+import { Table } from "../../shared/Table";
 import {
   useAdddistrictMutation,
   useDeletedistrictMutation,
   useGetdistrictQuery,
 } from "../../redux/features/districtslice";
-import { useGetProvienceQuery, useGetBranchesQuery } from "../../redux/features/branchSlice";
+import {
+  useGetBranchesQuery,
+  useGetProvienceQuery,
+} from "../../redux/features/branchSlice";
 
 const District = () => {
   const navigate = useNavigate();
@@ -24,9 +28,9 @@ const District = () => {
   const provinces = provinceData?.data || [];
   const allBranches = branchData?.data || [];
 
-  const [addDistrict] = useAdddistrictMutation();
-
-  const [deleteDistrict] = useDeletedistrictMutation();
+  const [addDistrict, { isLoading: isSaving }] = useAdddistrictMutation();
+  const [deleteDistrict, { isLoading: isDeleting }] =
+    useDeletedistrictMutation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showBranchModal, setShowBranchModal] = useState(false);
@@ -34,7 +38,6 @@ const District = () => {
   const [confirmText, setConfirmText] = useState("");
   const [deleteId, setDeleteId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
- 
 
   const initialState = {
     district_name: "",
@@ -52,11 +55,8 @@ const District = () => {
     }
 
     try {
-      {
-        await addDistrict(formData).unwrap();
-        toast.success("District added");
-      }
-
+      await addDistrict(formData).unwrap();
+      toast.success("District added");
       setFormData(initialState);
       setIsModalOpen(false);
     } catch (err) {
@@ -81,93 +81,86 @@ const District = () => {
     }
   };
 
-  if (isLoading) return <Loading />;
   if (isError) return <Error />;
 
   return (
     <div className="p-6">
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button
+          <Button
             onClick={() => navigate("/admin/dashboard")}
-            className="flex items-center gap-2 px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition"
-            title="Back to Dashboard"
+            variant="teal"
+            icon={ArrowLeft}
           >
-            <ArrowLeft size={18} />
             Back
-          </button>
-          <h1 className="text-2xl font-bold ml-90 ">Districts</h1>
+          </Button>
+          <h1 className="text-2xl font-bold">Districts</h1>
         </div>
 
-        <button
+        <Button
           onClick={() => {
             setFormData(initialState);
             setIsModalOpen(true);
           }}
-          className=" cursor-pointer flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full"
         >
-          <Plus size={18} /> Add District
-        </button>
+          Add District
+        </Button>
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="bg-emerald-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-emerald-800 font-semibold">
-                ID
-              </th>
-              <th className="px-6 py-3 text-left text-emerald-800 font-semibold">
-                District
-              </th>
-              <th className="px-6 py-3 text-left text-emerald-800 font-semibold">
-                Province
-              </th>
-              <th className="px-6 py-3 text-left text-emerald-800 font-semibold">
-                Actions
-              </th>
-            </tr>
-          </thead>
+      <Table
+        columns={[
+          { key: "id", header: "ID" },
+          { key: "district", header: "District" },
+          { key: "province", header: "Province" },
+          { key: "actions", header: "Actions" },
+        ]}
+        data={districts}
+        renderRow={
+          isLoading
+            ? null
+            : (district) => (
+                <tr key={district.district_id} className="odd:bg-gray-50">
+                  <td className="border-r border-gray-200 px-4 py-3">
+                    {district.district_id}
+                  </td>
+                  <td className="border-r border-gray-200 px-4 py-3 font-medium text-slate-900">
+                    {district.district_name}
+                  </td>
+                  <td className="border-r border-gray-200 px-4 py-3 text-slate-700">
+                    {district.province_name}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleView(district)}
+                        size="sm"
+                        icon={Eye}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setDeleteId(district.district_id);
+                          setConfirmText("");
+                          setShowDeleteModal(true);
+                        }}
+                        size="sm"
+                        variant="danger"
+                        icon={Trash2}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              )
+        }
+      />
 
-          <tbody>
-            {districts.map((d) => (
-              <tr key={d.district_id} className="border-t hover:bg-emerald-50">
-                <td className="px-6 py-3">{d.district_id}</td>
-                <td className="px-6 py-3 font-medium">{d.district_name}</td>
-                <td className="px-6 py-3">{d.province_name}</td>
-                <td className="px-6 py-3 flex gap-3">
-                  <button
-                    onClick={() => handleView(d)}
-                    className=" cursor-pointer flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded-full"
-                  >
-                    <Eye size={16} /> View
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteId(d.district_id);
-                      setConfirmText("");
-                      setShowDeleteModal(true);
-                    }}
-                    className=" cursor-pointer flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-full "
-                  >
-                    <Trash2 size={16} /> Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white w-96 p-6 rounded-xl">
-            <h2 className="text-xl font-bold mb-4">
-              Add District
-            </h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-96 rounded-xl bg-white p-6">
+            <h2 className="mb-4 text-xl font-bold">Add District</h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <select
@@ -175,12 +168,15 @@ const District = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, province_id: e.target.value })
                 }
-                className="w-full border p-2 rounded"
+                className="w-full rounded border p-2"
               >
                 <option value="">Select Province</option>
-                {provinces.map((p) => (
-                  <option key={p.province_id} value={p.province_id}>
-                    {p.province_name}
+                {provinces.map((province) => (
+                  <option
+                    key={province.province_id}
+                    value={province.province_id}
+                  >
+                    {province.province_name}
                   </option>
                 ))}
               </select>
@@ -192,47 +188,56 @@ const District = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, district_name: e.target.value })
                 }
-                className="w-full border p-2 rounded"
+                className="w-full rounded border p-2"
               />
 
               <div className="flex justify-end gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-200 rounded"
+                  variant="muted"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded"
+                  loading={isSaving}
+                  loadingText="Saving..."
                 >
                   Add
-                </button>
+                </Button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* BRANCHES MODAL */}
       <DetailsModal
         show={showBranchModal}
         onClose={() => setShowBranchModal(false)}
-        title={selectedDistrict ? `Branches in ${selectedDistrict.district_name}` : "Branches"}
+        title={
+          selectedDistrict
+            ? `Branches in ${selectedDistrict.district_name}`
+            : "Branches"
+        }
         size="lg"
       >
         <div className="space-y-3">
           {selectedDistrict ? (
-            allBranches.filter(b => b.district_id === selectedDistrict.district_id).length > 0 ? (
+            allBranches.filter(
+              (branch) => branch.district_id === selectedDistrict.district_id,
+            ).length > 0 ? (
               allBranches
-                .filter(b => b.district_id === selectedDistrict.district_id)
+                .filter(
+                  (branch) =>
+                    branch.district_id === selectedDistrict.district_id,
+                )
                 .map((branch) => (
                   <div
                     key={branch.branch_id}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
+                    className="flex items-center gap-3 rounded-lg border bg-gray-50 p-3"
                   >
-                    <span className="text-sm text-gray-600 font-mono">
+                    <span className="font-mono text-sm text-gray-600">
                       #{branch.branch_id}
                     </span>
                     <span className="font-medium text-gray-800">
@@ -241,19 +246,16 @@ const District = () => {
                   </div>
                 ))
             ) : (
-              <p className="text-gray-500 italic text-center py-4">
+              <p className="py-4 text-center italic text-gray-500">
                 No branches found in this district
               </p>
             )
           ) : (
-            <p className="text-gray-500 italic text-center py-4">
-              Loading...
-            </p>
+            <p className="py-4 text-center italic text-gray-500">Loading...</p>
           )}
         </div>
       </DetailsModal>
 
-      {/* DELETE CONFIRMATION MODAL */}
       <DetailsModal
         show={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -269,27 +271,25 @@ const District = () => {
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder="Type DELETE to confirm"
-            className="w-full p-2 border rounded"
+            className="w-full rounded border p-2"
           />
           <div className="flex justify-end gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => setShowDeleteModal(false)}
-              className="px-4 py-2 bg-gray-200 rounded"
+              variant="muted"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleDelete}
+              loading={isDeleting}
+              loadingText="Deleting..."
               disabled={confirmText !== "DELETE"}
-              className={`px-4 py-2 rounded ${
-                confirmText === "DELETE"
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
+              variant={confirmText === "DELETE" ? "danger" : "muted"}
             >
               Delete District
-            </button>
+            </Button>
           </div>
         </div>
       </DetailsModal>

@@ -1,8 +1,9 @@
-export const Error = (error) => {
-  if (!error) return null;
+export const Error = ({ message = "Failed to load data." }) => {
   return (
-    <p className=" text-center  p-5 font-bold text-red-500">
-      failed to loading....
-    </p>
+    <div className="flex min-h-[200px] items-center justify-center">
+      <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-center text-sm font-medium text-red-600 shadow-sm">
+        {message}
+      </div>
+    </div>
   );
 };
