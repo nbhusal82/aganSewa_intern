@@ -16,14 +16,17 @@ export const createStaff = async (req, res, next) => {
       branch_id,
       services_id,
     } = req.body;
+    const managerBranchId = req.user.branch_id;
+    const finalBranchId =
+      req.user.role === "manager" ? managerBranchId : branch_id;
 
     const image = req.file ? `uploads/staff/${req.file.filename}` : null;
 
     const [branch] = await db.query(
       "SELECT branch_id FROM branch WHERE branch_id=?",
-      [branch_id]
+      [finalBranchId]
     );
-    if (!branch) {
+    if (branch.length === 0) {
       if (req.file) {
         removeImage(req.file.path);
       }
@@ -35,12 +38,14 @@ export const createStaff = async (req, res, next) => {
       "SELECT services_id FROM services WHERE services_id=?",
       [services_id]
     );
-    if (!service) {
+    if (service.length === 0) {
       if (req.file) {
         removeImage(req.file.path);
       }
       return Apperror(next, "Invalid service", 400);
     }
+
+    const hashedPassword = await bcrypt.hash(String(password), 10);
 
     await db.query(
       `INSERT INTO staff 
@@ -50,12 +55,12 @@ export const createStaff = async (req, res, next) => {
         staff_name,
         position,
         image,
-        role,
+        role || "staff",
         email,
-        password,
+        hashedPassword,
 
         description,
-        branch_id,
+        finalBranchId,
         services_id,
       ]
     );
@@ -73,15 +78,22 @@ export const createStaff = async (req, res, next) => {
 
 export const getStaffs = async (req, res, next) => {
   try {
-    const [rows] = await db.query(`
+    const query = `
       SELECT s.*, 
              b.branch_name, 
              sv.services_name
       FROM staff s
       JOIN branch b ON s.branch_id = b.branch_id
       JOIN services sv ON s.services_id = sv.services_id
-      ORDER BY s.staff_id DESC
-    `);
+    `;
+    const [rows] =
+      req.user.role === "manager"
+        ? await db.query(
+            `${query} WHERE s.branch_id = ? ORDER BY s.staff_id DESC`,
+            [req.user.branch_id]
+          )
+        : await db.query(`${query} ORDER BY s.staff_id DESC`);
+
     rows.forEach((staff) => {
       delete staff.password;
     });
@@ -105,6 +117,14 @@ export const deleteStaff = async (req, res, next) => {
     if (check.length === 0) {
       return Apperror(next, "Staff not found", 400);
     }
+
+    if (
+      req.user.role === "manager" &&
+      Number(check[0].branch_id) !== Number(req.user.branch_id)
+    ) {
+      return Apperror(next, "You can delete only your branch staff", 403);
+    }
+
     if (check[0].image) {
       removeImage(`uploads/staff/${check[0].image.split("/").pop()}`);
     }
@@ -147,7 +167,7 @@ export const updateStaff = async (req, res, next) => {
         "SELECT branch_id FROM branch WHERE branch_id=?",
         [branch_id]
       );
-      if (!branch) {
+      if (branch.length === 0) {
         return Apperror(next, "Invalid branch", 400);
       }
     }
@@ -157,9 +177,16 @@ export const updateStaff = async (req, res, next) => {
         "SELECT services_id FROM services WHERE services_id=?",
         [services_id]
       );
-      if (!service) {
+      if (service.length === 0) {
         return Apperror(next, "Invalid service", 400);
       }
+    }
+
+    if (
+      req.user.role === "manager" &&
+      Number(old.branch_id) !== Number(req.user.branch_id)
+    ) {
+      return Apperror(next, "You can update only your branch staff", 403);
     }
 
     const newStaffName = staff_name || old.staff_name;
@@ -183,14 +210,10 @@ export const updateStaff = async (req, res, next) => {
       `UPDATE staff SET
         staff_name=?,
         position=?,
-       
         description=?,
         branch_id=?,
         services_id=?,
-        image=?,
-     
-    
-       
+        image=?
        WHERE staff_id=?`,
       [
         newStaffName,

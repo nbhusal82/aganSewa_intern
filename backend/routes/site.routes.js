@@ -19,8 +19,13 @@ import { branchAccess } from "../middlewares/branchAccess.js";
 
 const site_router = express.Router();
 site_router.post("/", islogin, addInquiry);
-site_router.get("/", islogin, AllInquiry);
-site_router.delete("/:id", islogin, deleteinquiry);
+site_router.get("/", islogin, authorizeRoles("admin", "manager"), AllInquiry);
+site_router.delete(
+  "/:id",
+  islogin,
+  authorizeRoles("admin", "manager"),
+  deleteinquiry
+);
 
 //create review
 site_router.post("/review", islogin, createReview);

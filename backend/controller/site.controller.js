@@ -23,8 +23,20 @@ export const addInquiry = async (req, res, next) => {
 
 export const AllInquiry = async (req, res, next) => {
   try {
-    const [rows] = await db.query(`SELECT i.name, i.phone,
-            i.email,i.description,i.address,b.branch_id,b.branch_name from inquiry i LEFT JOIN branch b ON i.branch_id=b.branch_id`);
+    const [rows] =
+      req.user.role === "manager"
+        ? await db.query(
+            `SELECT i.inquiry_id, i.name, i.phone, i.email, i.description, i.address, b.branch_id, b.branch_name
+             FROM inquiry i
+             LEFT JOIN branch b ON i.branch_id=b.branch_id
+             WHERE i.branch_id = ?`,
+            [req.user.branch_id]
+          )
+        : await db.query(
+            `SELECT i.inquiry_id, i.name, i.phone, i.email, i.description, i.address, b.branch_id, b.branch_name
+             FROM inquiry i
+             LEFT JOIN branch b ON i.branch_id=b.branch_id`
+          );
 
     return res.status(200).json({
       message: "Get All Inquiry",
@@ -41,6 +53,22 @@ export const deleteinquiry = async (req, res, next) => {
     if (!id) {
       return Apperror(next, "Inquiry Id is not Found", 400);
     }
+
+    if (req.user.role === "manager") {
+      const [check] = await db.query(
+        "SELECT branch_id FROM inquiry WHERE inquiry_id = ?",
+        [id]
+      );
+
+      if (check.length === 0) {
+        return Apperror(next, "Inquiry not found", 404);
+      }
+
+      if (Number(check[0].branch_id) !== Number(req.user.branch_id)) {
+        return Apperror(next, "You can delete only your branch inquiry", 403);
+      }
+    }
+
     await db.query("DELETE  FROM inquiry WHERE inquiry_id = ?", [id]);
     return res.status(200).json({
       message: "Delete Inquiry Sucessfully",
@@ -87,9 +115,11 @@ export const getReview = async (req, res, next) => {
 export const addgallery = async (req, res, next) => {
   try {
     const { title, location, branch_id } = req.body;
+    const { role, branch_id: userBranchId } = req.user;
+    const finalBranchId = role === "manager" ? userBranchId : branch_id;
 
     // Required fields (branch_id admin ko lagi matra)
-    if (!title || !location || (role === "admin" && !branch_id)) {
+    if (!title || !location || !finalBranchId) {
       if (req.files && req.files.length > 0) {
         req.files.forEach((file) => removeImage(file.path));
       }
@@ -98,7 +128,7 @@ export const addgallery = async (req, res, next) => {
 
     // Check branch exists
     const [rows] = await db.query("SELECT * FROM branch WHERE branch_id=?", [
-      branch_id,
+      finalBranchId,
     ]);
 
     if (rows.length === 0) {
@@ -115,7 +145,7 @@ export const addgallery = async (req, res, next) => {
     // Insert
     await db.query(
       "INSERT INTO gallery (title, location, branch_id, image) VALUES (?, ?, ?, ?)",
-      [title, location, branch_id, image]
+      [title, location, finalBranchId, image]
     );
 
     return res.status(200).json({
@@ -179,7 +209,7 @@ export const updateGallery = async (req, res, next) => {
     const old = check[0];
 
     //  Manager → own branch only
-    if (role === "manager" && old.branch_id !== userBranchId) {
+    if (role === "manager" && Number(old.branch_id) !== Number(userBranchId)) {
       return Apperror(next, "You can update only your branch gallery", 403);
     }
 
@@ -202,12 +232,14 @@ export const updateGallery = async (req, res, next) => {
 
     //  Image update
     let imagePath = old.image;
-    if (req.file) {
-      imagePath = `uploads/gallery/${req.file.filename}`;
-
+    if (req.files && req.files.length > 0) {
       if (old.image) {
-        removeImage(`uploads/gallery/${old.image.split("/").pop()}`);
+        old.image.split(",").forEach((img) => removeImage(img));
       }
+
+      imagePath = req.files
+        .map((file) => `uploads/gallery/${file.filename}`)
+        .join(",");
     }
 
     //  Safe values (null issue solve)
@@ -251,7 +283,7 @@ export const deleteGallery = async (req, res, next) => {
     const gallery = rows[0];
 
     //  Manager → own branch only
-    if (role === "manager" && gallery.branch_id !== userBranchId) {
+    if (role === "manager" && Number(gallery.branch_id) !== Number(userBranchId)) {
       return Apperror(next, "You can delete only your branch gallery", 403);
     }
 

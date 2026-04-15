@@ -5,9 +5,11 @@ import { removeImage } from "../utlis/removeImg.js";
 export const addservices = async (req, res, next) => {
   try {
     const { services_name, description, branch_id } = req.body;
+    const finalBranchId =
+      req.user.role === "manager" ? req.user.branch_id : branch_id;
 
     // Required fields
-    if (!services_name || !description) {
+    if (!services_name || !description || !finalBranchId) {
       if (req.file) removeImage(req.file.path);
       return Apperror(next, "All fields are required", 400);
     }
@@ -15,7 +17,7 @@ export const addservices = async (req, res, next) => {
     // Check branch exists
     const [branch] = await db.query(
       "SELECT branch_id FROM branch WHERE branch_id = ?",
-      [branch_id]
+      [finalBranchId]
     );
 
     if (branch.length === 0) {
@@ -55,9 +57,13 @@ export const AllService = async (req, res, next) => {
         LEFT JOIN branch b ON s.branch_id = b.branch_id
       `);
     } else {
-      [rows] = await db.query("SELECT * FROM services WHERE branch_id=?", [
-        branchId,
-      ]);
+      [rows] = await db.query(
+        `SELECT s.*, b.branch_name
+         FROM services s
+         LEFT JOIN branch b ON s.branch_id = b.branch_id
+         WHERE s.branch_id=?`,
+        [branchId]
+      );
     }
 
     return res.status(200).json({
@@ -84,7 +90,7 @@ export const DeleteService = async (req, res, next) => {
     }
 
     // manager → own branch only
-    if (role === "manager" && service[0].branch_id !== branch_id) {
+    if (role === "manager" && Number(service[0].branch_id) !== Number(branch_id)) {
       return Apperror(next, "You can delete only your branch service", 403);
     }
 
@@ -115,7 +121,7 @@ export const updateService = async (req, res, next) => {
     }
 
     // manager → own branch only
-    if (role === "manager" && check[0].branch_id !== branch_id) {
+    if (role === "manager" && Number(check[0].branch_id) !== Number(branch_id)) {
       return Apperror(next, "You can update only your branch service", 403);
     }
 

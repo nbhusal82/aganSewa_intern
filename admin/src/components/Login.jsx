@@ -32,12 +32,15 @@ const Login = () => {
     try {
       const res = await login(fromdata).unwrap(); // api call by redux
 
-      dispatch(setUser(res?.user));
+      dispatch(setUser(res));
       if (res.user.role === "admin") {
         toast.success("Welcome Admin");
         navigate("/admin/dashboard");
+      } else if (res.user.role === "manager") {
+        toast.success("Welcome Manager");
+        navigate("/manager/dashboard");
       } else {
-        toast.error("You are not authorized as admin");
+        toast.error("You are not authorized");
         dispatch(logout());
       }
     } catch (error) {

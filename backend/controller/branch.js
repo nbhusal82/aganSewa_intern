@@ -234,7 +234,7 @@ export const addbranch = async (req, res, next) => {
 };
 export const getbranch = async (req, res, next) => {
   try {
-    const [allbranch] = await db.query(`SELECT 
+    const baseQuery = `SELECT 
   b.branch_id,
   b.branch_name,
   b.Remark,
@@ -244,8 +244,13 @@ export const getbranch = async (req, res, next) => {
   p.province_name
 FROM branch b
 LEFT JOIN district d ON b.district_id = d.district_id
-LEFT JOIN province p ON d.province_id = p.province_id;
-`);
+LEFT JOIN province p ON d.province_id = p.province_id`;
+
+    const [allbranch] =
+      req.user.role === "manager"
+        ? await db.query(`${baseQuery} WHERE b.branch_id = ?`, [req.user.branch_id])
+        : await db.query(`${baseQuery};`);
+
     return res.status(200).json({
       message: "ALL branch ",
       data: allbranch,
@@ -272,6 +277,13 @@ export const deletebranch = async (req, res, next) => {
       return Apperror(next, "Branch not found", 404);
     }
 
+    if (
+      req.user.role === "manager" &&
+      Number(branch_id) !== Number(req.user.branch_id)
+    ) {
+      return Apperror(next, "You can delete only your own branch", 403);
+    }
+
     await db.query("DELETE FROM branch WHERE branch_id = ?", [branch_id]);
 
     return res.status(200).json({
@@ -296,6 +308,13 @@ export const updatebranch = async (req, res, next) => {
     ]);
     if (check.length === 0) {
       return Apperror(next, "Branch not found", 400);
+    }
+
+    if (
+      req.user.role === "manager" &&
+      Number(branch_id) !== Number(req.user.branch_id)
+    ) {
+      return Apperror(next, "You can update only your own branch", 403);
     }
 
     await db.query(

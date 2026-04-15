@@ -9,8 +9,10 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setUser: (state, action) => {
-      state.user = action.payload.user;
-      state.token = action.payload.token;
+      const payload = action.payload || {};
+
+      state.user = payload.user || payload;
+      state.token = payload.token || null;
       state.isAuth = true;
     },
     logout: (state) => {
